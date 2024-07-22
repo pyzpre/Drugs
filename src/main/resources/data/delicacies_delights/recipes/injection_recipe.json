@@ -1,0 +1,14 @@
+{
+  "type": "delicacies_delights:injection",
+  "ingredient1": {
+    "item": "minecraft:potion",
+    "nbt": "{Potion:\"minecraft:long_invisibility\"}"
+  },
+  "ingredient2": {
+    "item": "minecraft:iron_ingot"
+  },
+  "result": {
+    "item": "minecraft:diamond",
+    "count": 1
+  }
+}
