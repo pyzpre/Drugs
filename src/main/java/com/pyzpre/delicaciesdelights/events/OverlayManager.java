@@ -41,8 +41,6 @@ public class OverlayManager {
 
         CompoundTag persistentData = rootPersistentData.getCompound(Player.PERSISTED_NBT_TAG);
 
-        LOGGER.info("Current Persistent Data before update: {}", persistentData);
-
         if (add) {
             LOGGER.info("Adding overlay tag: {}", tag);
             persistentData.putBoolean(tag, true);
@@ -54,12 +52,14 @@ public class OverlayManager {
         }
 
         rootPersistentData.put(Player.PERSISTED_NBT_TAG, persistentData);
-        LOGGER.info("Updated Persistent Data in Player: {}", player.getPersistentData());
 
         if (!fromNetwork && player.level().isClientSide()) {
             suppressClientUpdate = true;
             // Send packet to server to update server-side data
             NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
+        } else if (!fromNetwork && !player.level().isClientSide()) {
+            // Send packet to client to update client-side data
+            NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new OverlayTagPacket(tag, add));
         }
     }
 
@@ -67,6 +67,7 @@ public class OverlayManager {
         updateOverlayTag(player, tag, add, true);
         suppressClientUpdate = false;
     }
+
     public static class OverlayMetadata {
         public final ResourceLocation location;
         public final float alphaIncrement;

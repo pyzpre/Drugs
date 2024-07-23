@@ -1,10 +1,13 @@
 package com.pyzpre.delicaciesdelights.network;
 
+import com.pyzpre.delicaciesdelights.events.OverlayRenderer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class OverlaySyncPacket {
     private final List<ResourceLocation> overlays;
@@ -27,6 +30,10 @@ public class OverlaySyncPacket {
             overlays.add(buf.readResourceLocation());
         }
         return new OverlaySyncPacket(overlays);
+    }
+
+    public static void handle(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
+        OverlayRenderer.handleSyncPacket(packet, ctx);
     }
 
     public List<ResourceLocation> getOverlays() {

@@ -19,13 +19,13 @@ public class NetworkSetup {
 
     public static void registerMessages() {
         int id = 0;
-        CHANNEL.registerMessage(id++, OverlaySyncPacket.class, OverlaySyncPacket::encode, OverlaySyncPacket::decode, OverlaySyncPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, OverlayTagPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, OverlaySyncPacket.class, OverlaySyncPacket::encode, OverlaySyncPacket::decode, OverlaySyncPacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, ServerOverlayTagPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 
     public static void registerClientMessages() {
-        int id = 0;
-        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, OverlayTagPacketHandler::handle, Optional.empty());
+        int id = 1;
+        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, ClientOverlayTagPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static SimpleChannel getChannel() {

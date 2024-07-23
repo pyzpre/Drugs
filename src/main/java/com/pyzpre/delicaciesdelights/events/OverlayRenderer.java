@@ -31,7 +31,7 @@ public class OverlayRenderer {
     private static long startTime = System.currentTimeMillis();
     private static boolean resetElapsedTime = false;
 
-    public static void addOverlaysToRender(List<OverlayManager.OverlayMetadata> overlays) {
+    public static synchronized void addOverlaysToRender(List<OverlayManager.OverlayMetadata> overlays) {
         if (!overlays.isEmpty()) {
             OverlayManager.OverlayMetadata newOverlay = overlays.get(0); // Limit to one overlay at a time
             if (currentOverlay == null || !currentOverlay.location.equals(newOverlay.location)) {
@@ -43,7 +43,7 @@ public class OverlayRenderer {
         }
     }
 
-    public static void startFadingOut() {
+    public static synchronized void startFadingOut() {
         isFadingOut = true;
         shouldRenderOverlays = false;
     }
@@ -53,31 +53,43 @@ public class OverlayRenderer {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
 
-        if (currentOverlay != null && (shouldRenderOverlays || currentAlphas.values().stream().anyMatch(alpha -> alpha > 0.0f))) {
+        synchronized (OverlayRenderer.class) {
+            if (currentOverlay != null && (shouldRenderOverlays || currentAlphas.values().stream().anyMatch(alpha -> alpha > 0.0f))) {
 
-            if (shouldRenderOverlays) {
-                handleEffects();
-            }
+                if (shouldRenderOverlays) {
+                    handleEffects();
+                }
 
-            if (isFadingOut) {
-                fadeOutEffects(player);
-            }
+                if (isFadingOut) {
+                    fadeOutEffects(player);
+                }
 
-            if (player != null && mc.level != null) {
-                float alpha = currentAlphas.get(currentOverlay.location);
-                renderOverlay(event.getGuiGraphics(), alpha, currentOverlay.location);
+                if (player != null && mc.level != null) {
+                    if (currentOverlay == null) {
+                        LOGGER.warn("Current overlay is null. Skipping rendering.");
+                        return;
+                    }
 
-                if (isFadingOut && alpha == 0.0f) {
-                    currentOverlay = null;
-                    currentAlphas.clear();
-                    isFadingOut = false;
-                    resetElapsedTime = false;
+                    Float alpha = currentAlphas.get(currentOverlay.location);
+
+                    // Handle case where the location is not found
+                    if (alpha == null) {
+                        LOGGER.warn("Alpha value for current overlay location {} not found.", currentOverlay.location);
+                        clearCurrentOverlay();
+                        return;
+                    }
+
+                    renderOverlay(event.getGuiGraphics(), alpha, currentOverlay.location);
+
+                    if (isFadingOut && alpha == 0.0f) {
+                        clearCurrentOverlay();
+                    }
                 }
             }
         }
     }
 
-    private static void handleEffects() {
+    private static synchronized void handleEffects() {
         long currentTime = System.currentTimeMillis();
         float elapsedTime = (currentTime - startTime) / 1000.0f;
 
@@ -106,10 +118,10 @@ public class OverlayRenderer {
         }
     }
 
-    private static void fadeOutEffects(Player player) {
+    private static synchronized void fadeOutEffects(Player player) {
         if (currentOverlay != null) {
-            float alpha = currentAlphas.get(currentOverlay.location);
-            if (alpha > 0.0f) {
+            Float alpha = currentAlphas.get(currentOverlay.location);
+            if (alpha != null && alpha > 0.0f) {
                 alpha -= currentOverlay.alphaIncrement;
                 if (alpha < 0.0f) {
                     alpha = 0.0f;
@@ -117,15 +129,22 @@ public class OverlayRenderer {
                 currentAlphas.put(currentOverlay.location, alpha);
             }
 
-            if (alpha == 0.0f) {
+            if (alpha != null && alpha == 0.0f) {
                 String tag = getOverlayTag(currentOverlay);
                 if (tag != null) {
                     OverlayManager.updateOverlayTag(player, tag, false, false);
                     LOGGER.info("Removing overlay tag in OverlayRenderer: {}", tag);
                 }
-                currentOverlay = null;  // Clear the current overlay when fully faded out
+                clearCurrentOverlay();
             }
         }
+    }
+
+    private static synchronized void clearCurrentOverlay() {
+        currentOverlay = null;
+        currentAlphas.clear();
+        isFadingOut = false;
+        resetElapsedTime = false;
     }
 
     private static String getOverlayTag(OverlayManager.OverlayMetadata overlay) {
