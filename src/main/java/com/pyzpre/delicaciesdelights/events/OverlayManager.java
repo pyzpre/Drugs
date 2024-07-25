@@ -2,9 +2,11 @@ package com.pyzpre.delicaciesdelights.events;
 
 import com.pyzpre.delicaciesdelights.DelicaciesDelights;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
+import com.pyzpre.delicaciesdelights.network.OverlaySyncPacket;
 import com.pyzpre.delicaciesdelights.network.OverlayTagPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
@@ -12,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+
+import static com.pyzpre.delicaciesdelights.events.OverlayRenderer.addOverlaysToRender;
+import static com.pyzpre.delicaciesdelights.events.OverlayRenderer.startFadingOut;
 
 public class OverlayManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlayManager.class);
@@ -53,19 +58,41 @@ public class OverlayManager {
 
         rootPersistentData.put(Player.PERSISTED_NBT_TAG, persistentData);
 
-        if (!fromNetwork && player.level().isClientSide()) {
-            suppressClientUpdate = true;
-            // Send packet to server to update server-side data
-            NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
-        } else if (!fromNetwork && !player.level().isClientSide()) {
-            // Send packet to client to update client-side data
-            NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new OverlayTagPacket(tag, add));
+        if (!fromNetwork) {
+            MinecraftServer server = player.getServer();
+            if (server != null && server.isSingleplayer()) {
+                // Singleplayer environment
+                LOGGER.info("Singleplayer environment detected.");
+                NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
+            } else if (player.level().isClientSide()) {
+                // Client-side
+                suppressClientUpdate = true;
+                // Send packet to server to update server-side data
+                NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
+            }
         }
     }
-
+    public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
+        if (overlays.isEmpty()) {
+            startFadingOut();
+        } else {
+            addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
+        }
+    }
     public static void handleNetworkUpdate(Player player, String tag, boolean add) {
         updateOverlayTag(player, tag, add, true);
         suppressClientUpdate = false;
+
+        if (player.level().isClientSide()) {
+            // Send sync packet to the client
+            List<ResourceLocation> overlays = new ArrayList<>();
+            for (List<OverlayMetadata> metadataList : OVERLAY_MAP.values()) {
+                for (OverlayMetadata metadata : metadataList) {
+                    overlays.add(metadata.location);
+                }
+            }
+            NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new OverlaySyncPacket(overlays));
+        }
     }
 
     public static class OverlayMetadata {

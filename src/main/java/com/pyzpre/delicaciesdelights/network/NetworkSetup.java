@@ -1,34 +1,34 @@
 package com.pyzpre.delicaciesdelights.network;
 
-import com.pyzpre.delicaciesdelights.DelicaciesDelights;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-
-import java.util.Optional;
 
 public class NetworkSetup {
     private static final String PROTOCOL_VERSION = "1";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(DelicaciesDelights.MODID, "main"),
+            new ResourceLocation("delicaciesdelights", "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
 
-    public static void registerMessages() {
-        int id = 0;
-        CHANNEL.registerMessage(id++, OverlaySyncPacket.class, OverlaySyncPacket::encode, OverlaySyncPacket::decode, OverlaySyncPacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, ServerOverlayTagPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
-    }
-
-    public static void registerClientMessages() {
-        int id = 1;
-        CHANNEL.registerMessage(id++, OverlayTagPacket.class, OverlayTagPacket::encode, OverlayTagPacket::decode, ClientOverlayTagPacketHandler::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-    }
-
     public static SimpleChannel getChannel() {
         return CHANNEL;
+    }
+
+    public static void registerMessages() {
+        int id = 0;
+        CHANNEL.messageBuilder(OverlayTagPacket.class, id++)
+                .encoder(OverlayTagPacket::encode)
+                .decoder(OverlayTagPacket::decode)
+                .consumerMainThread(OverlayTagPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(OverlaySyncPacket.class, id++)
+                .encoder(OverlaySyncPacket::encode)
+                .decoder(OverlaySyncPacket::decode)
+                .consumerMainThread(OverlaySyncPacket::handle)
+                .add();
     }
 }

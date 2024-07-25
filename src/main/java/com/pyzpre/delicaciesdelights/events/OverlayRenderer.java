@@ -186,4 +186,13 @@ public class OverlayRenderer {
         });
         ctx.get().setPacketHandled(true);
     }
+    public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
+        if (overlays.isEmpty()) {
+            startFadingOut();
+        } else {
+            addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
+        }
+    }
+
+
 }

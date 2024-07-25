@@ -1,5 +1,6 @@
 package com.pyzpre.delicaciesdelights.network;
 
+import com.pyzpre.delicaciesdelights.events.OverlayManager;
 import com.pyzpre.delicaciesdelights.events.OverlayRenderer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +34,14 @@ public class OverlaySyncPacket {
     }
 
     public static void handle(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
-        OverlayRenderer.handleSyncPacket(packet, ctx);
+        ctx.get().enqueueWork(() -> {
+            if (packet.getOverlays().isEmpty()) {
+                OverlayRenderer.startFadingOut();
+            } else {
+                OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
+            }
+        });
+        ctx.get().setPacketHandled(true);
     }
 
     public List<ResourceLocation> getOverlays() {

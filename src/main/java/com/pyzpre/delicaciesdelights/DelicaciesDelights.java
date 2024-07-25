@@ -50,7 +50,7 @@ public class DelicaciesDelights {
     }
 
     private void doClientStuff(final FMLClientSetupEvent event) {
-        NetworkSetup.registerClientMessages();
+
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
