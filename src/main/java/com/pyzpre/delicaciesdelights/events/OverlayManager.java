@@ -25,8 +25,8 @@ public class OverlayManager {
     private static final Map<String, List<OverlayMetadata>> OVERLAY_MAP = new HashMap<>();
 
     static {
-        OVERLAY_MAP.put("Unanchored", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/silly.png"), 0.0001f, 0.1f, true, 4.0f))); // Pulsate with 1 second duration
-        OVERLAY_MAP.put("SomeOtherOverlay", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/saul.png"), 0.0001f, 0.0f, false, 1.0f))); // No pulsate
+        OVERLAY_MAP.put("Unanchored", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/breakingbad.png"), 0.0001f, 0.1f, true, 4.0f))); // Pulsate with 1 second duration
+        OVERLAY_MAP.put("SomeOtherOverlay", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/powder_snow_outline.png"), 0.0001f, 0.0f, false, 1.0f))); // No pulsate
     }
 
     public static List<OverlayMetadata> getOverlays(String tag) {

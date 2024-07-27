@@ -12,12 +12,12 @@ import net.minecraft.world.level.Level;
 
 public class ConceptItem2 extends Item {
     private final String overlayTag;
+    private final String debuffTag;
 
-
-    public ConceptItem2(Properties properties, String overlayTag) {
+    public ConceptItem2(Properties properties, String overlayTag, String debuffTag) {
         super(properties);
         this.overlayTag = overlayTag;
-
+        this.debuffTag = debuffTag;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class ConceptItem2 extends Item {
                 MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "SomeOtherOverlay", true, false);
-
+                DebuffManager.addDebuffTag(player, debuffTag);
             }
         }
         return super.finishUsingItem(stack, world, entity);

@@ -16,6 +16,7 @@ public class DebuffManager {
     public static final Map<String, List<MobEffect>> DEBUFF_MAP = new HashMap<>();
 
     static {
+        DEBUFF_MAP.put("Nothing", List.of());
         DEBUFF_MAP.put("Slowness", List.of(MobEffects.MOVEMENT_SLOWDOWN));
         DEBUFF_MAP.put("Sickness", List.of(MobEffects.CONFUSION, MobEffects.POISON));
         DEBUFF_MAP.put("Blackout", List.of(MobEffects.BLINDNESS, MobEffects.CONFUSION));
