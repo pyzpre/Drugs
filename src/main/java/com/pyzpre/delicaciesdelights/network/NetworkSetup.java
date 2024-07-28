@@ -30,5 +30,11 @@ public class NetworkSetup {
                 .decoder(OverlaySyncPacket::decode)
                 .consumerMainThread(OverlaySyncPacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(RequestOverlayResourcesPacket.class, id++)
+                .encoder(RequestOverlayResourcesPacket::toBytes)
+                .decoder(RequestOverlayResourcesPacket::new)
+                .consumerMainThread(RequestOverlayResourcesPacket::handle)
+                .add();
     }
 }

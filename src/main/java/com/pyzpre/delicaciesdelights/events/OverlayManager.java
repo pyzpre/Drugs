@@ -2,8 +2,9 @@ package com.pyzpre.delicaciesdelights.events;
 
 import com.pyzpre.delicaciesdelights.DelicaciesDelights;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
-import com.pyzpre.delicaciesdelights.network.OverlaySyncPacket;
 import com.pyzpre.delicaciesdelights.network.OverlayTagPacket;
+import com.pyzpre.delicaciesdelights.network.RequestOverlayResourcesPacket;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -25,8 +26,12 @@ public class OverlayManager {
     private static final Map<String, List<OverlayMetadata>> OVERLAY_MAP = new HashMap<>();
 
     static {
-        OVERLAY_MAP.put("Unanchored", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/breakingbad.png"), 0.0001f, 0.1f, true, 4.0f))); // Pulsate with 1 second duration
-        OVERLAY_MAP.put("SomeOtherOverlay", List.of(new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/powder_snow_outline.png"), 0.0001f, 0.0f, false, 1.0f))); // No pulsate
+        OVERLAY_MAP.put("Unanchored", List.of(
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/badapple"), 0.0001f, 0.1f, true, 4.0f, 100)
+        ));
+        OVERLAY_MAP.put("SomeOtherOverlay", List.of(
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/rocket"), 0.0001f, 0.0f, false, 1.0f, 100)
+        ));
     }
 
     public static List<OverlayMetadata> getOverlays(String tag) {
@@ -72,6 +77,7 @@ public class OverlayManager {
             }
         }
     }
+
     public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
         if (overlays.isEmpty()) {
             startFadingOut();
@@ -79,6 +85,7 @@ public class OverlayManager {
             addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
         }
     }
+
     public static void handleNetworkUpdate(Player player, String tag, boolean add) {
         updateOverlayTag(player, tag, add, true);
         suppressClientUpdate = false;
@@ -88,26 +95,10 @@ public class OverlayManager {
             List<ResourceLocation> overlays = new ArrayList<>();
             for (List<OverlayMetadata> metadataList : OVERLAY_MAP.values()) {
                 for (OverlayMetadata metadata : metadataList) {
-                    overlays.add(metadata.location);
+                    overlays.add(metadata.getLocation());
                 }
             }
-            NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new OverlaySyncPacket(overlays));
-        }
-    }
-
-    public static class OverlayMetadata {
-        public final ResourceLocation location;
-        public final float alphaIncrement;
-        public final float fovChange;
-        public final boolean pulsate;
-        public final float pulsateDuration; // Added for pulsate duration
-
-        public OverlayMetadata(ResourceLocation location, float alphaIncrement, float fovChange, boolean pulsate, float pulsateDuration) {
-            this.location = location;
-            this.alphaIncrement = alphaIncrement;
-            this.fovChange = fovChange;
-            this.pulsate = pulsate;
-            this.pulsateDuration = pulsateDuration; // Initialize pulsateDuration
+            NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), new RequestOverlayResourcesPacket(overlays));
         }
     }
 
@@ -119,7 +110,7 @@ public class OverlayManager {
         List<OverlayMetadata> result = new ArrayList<>();
         for (List<OverlayMetadata> metadataList : OVERLAY_MAP.values()) {
             for (OverlayMetadata metadata : metadataList) {
-                if (locations.contains(metadata.location)) {
+                if (locations.contains(metadata.getLocation())) {
                     result.add(metadata);
                 }
             }

@@ -18,12 +18,15 @@ public class FOVHandler {
         float newFovModifier = event.getNewFovModifier();
 
         for (MobEffectInstance effect : player.getActiveEffects()) {
-            String effectName = effect.getEffect().getDescriptionId();
-            List<OverlayManager.OverlayMetadata> overlays = OverlayManager.getOverlays(effectName);
+            // Use the description ID to find the correct overlay tag
+            String effectDescriptionId = effect.getEffect().getDescriptionId();
+
+            // Check if there are overlays associated with this effect
+            List<OverlayMetadata> overlays = OverlayManager.getOverlays(effectDescriptionId);
             if (overlays != null) {
-                for (OverlayManager.OverlayMetadata overlay : overlays) {
-                    if (overlay.fovChange != 0.0f) {
-                        newFovModifier += (overlay.fovChange * (effect.getAmplifier() + 1));
+                for (OverlayMetadata overlay : overlays) {
+                    if (overlay.getFovChange() != 0.0f) {
+                        newFovModifier += (overlay.getFovChange() * (effect.getAmplifier() + 1));
                     }
                 }
             }

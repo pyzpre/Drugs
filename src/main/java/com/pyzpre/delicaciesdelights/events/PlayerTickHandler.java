@@ -3,7 +3,6 @@ package com.pyzpre.delicaciesdelights.events;
 import com.pyzpre.delicaciesdelights.DelicaciesDelights;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import com.pyzpre.delicaciesdelights.network.OverlaySyncPacket;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -41,15 +40,16 @@ public class PlayerTickHandler {
         // Iterate over all active effects
         for (MobEffectInstance effect : player.getActiveEffects()) {
             anyEffectActive = true;
-            String effectName = effect.getEffect().getDisplayName().getString();
+            String effectDescriptionId = effect.getEffect().getDescriptionId();
 
             // Check if the player has a debuff tag for any of the active effects
             for (String key : OverlayManager.getOverlayMap().keySet()) {
                 if (OverlayManager.hasOverlayTag(player, key)) {
-                    List<OverlayManager.OverlayMetadata> overlays = OverlayManager.getOverlays(key);
+                    List<OverlayMetadata> overlays = OverlayManager.getOverlays(key);
                     if (overlays != null) {
-                        for (OverlayManager.OverlayMetadata overlay : overlays) {
-                            if (activeOverlays.add(overlay.location)) {  // Add only if not already present
+                        for (OverlayMetadata overlay : overlays) {
+                            if (activeOverlays.add(overlay.getLocation())) {  // Add only if not already present
+                                LOGGER.debug("Added overlay {} for effect {}", overlay.getLocation(), effectDescriptionId);
                             }
                         }
                     }
@@ -58,10 +58,10 @@ public class PlayerTickHandler {
         }
 
         if (anyEffectActive) {
-
+            LOGGER.debug("Sending overlay sync packet to client with overlays: {}", activeOverlays);
             NetworkSetup.getChannel().sendTo(new OverlaySyncPacket(new ArrayList<>(activeOverlays)), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
         } else {
-
+            LOGGER.debug("No active effects, sending empty overlay sync packet to client");
             NetworkSetup.getChannel().sendTo(new OverlaySyncPacket(new ArrayList<>()), player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
         }
     }
@@ -73,17 +73,16 @@ public class PlayerTickHandler {
         // Iterate over all active effects
         for (MobEffectInstance effect : player.getActiveEffects()) {
             anyEffectActive = true;
-            String effectName = effect.getEffect().getDisplayName().getString();
-
+            String effectDescriptionId = effect.getEffect().getDescriptionId();
 
             // Check if the player has a debuff tag for any of the active effects
             for (String key : OverlayManager.getOverlayMap().keySet()) {
                 if (OverlayManager.hasOverlayTag(player, key)) {
-
-                    List<OverlayManager.OverlayMetadata> overlays = OverlayManager.getOverlays(key);
+                    List<OverlayMetadata> overlays = OverlayManager.getOverlays(key);
                     if (overlays != null) {
-                        for (OverlayManager.OverlayMetadata overlay : overlays) {
-                            if (activeOverlays.add(overlay.location)) {  // Add only if not already present
+                        for (OverlayMetadata overlay : overlays) {
+                            if (activeOverlays.add(overlay.getLocation())) {  // Add only if not already present
+                                LOGGER.debug("Added overlay {} for effect {}", overlay.getLocation(), effectDescriptionId);
                             }
                         }
                     }
@@ -92,10 +91,10 @@ public class PlayerTickHandler {
         }
 
         if (anyEffectActive) {
-
+            LOGGER.debug("Adding overlays to render: {}", activeOverlays);
             OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(new ArrayList<>(activeOverlays)));
         } else {
-
+            LOGGER.debug("No active effects, starting fade out");
             OverlayRenderer.startFadingOut();
         }
     }
