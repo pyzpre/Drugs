@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 @Mod.EventBusSubscriber(modid = DelicaciesDelights.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class OverlayRenderer {
     private static final Logger LOGGER = LoggerFactory.getLogger(OverlayRenderer.class);
-    private static final Map<String, Float> currentAlphas = new HashMap<>();  // Use tag instead of ResourceLocation
+    private static final Map<String, Float> currentAlphas = new HashMap<>();
     private static OverlayMetadata currentOverlay = null;
     private static boolean shouldRenderOverlays = false;
     private static boolean isFadingOut = false;
@@ -152,8 +152,6 @@ public class OverlayRenderer {
 
                 clearCurrentOverlay();
             }
-        } else {
-            LOGGER.info("No current overlay to fade out.");
         }
     }
 
