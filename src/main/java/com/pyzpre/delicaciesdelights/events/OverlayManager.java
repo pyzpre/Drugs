@@ -26,13 +26,15 @@ public class OverlayManager {
 
     static {
         OVERLAY_MAP.put("Unanchored", List.of(
-                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/snow"), 0.0001f, -30f, true, 4.0f, 100)
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/anime"), 0.0001f, 0f, true, 4.0f, 100)
         ));
         OVERLAY_MAP.put("SomeOtherOverlay", List.of(
-                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/snow"), 0.0001f, 0.0f, false, 1.0f, 100)
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/counting"), 0.0001f, 1f, false, 1.0f, 1000)
         ));
     }
-
+    // frame duration of 1000 = 1 fps
+    // frame duration of 100 = 10 fps
+    // frame duration of 10 = 100 fps
     public static List<OverlayMetadata> getOverlays(String tag) {
         return OVERLAY_MAP.get(tag);
     }
@@ -43,7 +45,6 @@ public class OverlayManager {
     }
 
     public static void updateOverlayTag(Player player, String tag, boolean add, boolean fromNetwork) {
-
         CompoundTag rootPersistentData = player.getPersistentData();
         if (!rootPersistentData.contains(Player.PERSISTED_NBT_TAG, 10)) { // 10 is the ID for a compound tag
             rootPersistentData.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
@@ -61,13 +62,18 @@ public class OverlayManager {
 
         if (!fromNetwork) {
             MinecraftServer server = player.getServer();
-            if (server != null && server.isSingleplayer()) {
-                // Singleplayer environment
-                NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
+            if (server != null) {
+                if (server.isSingleplayer()) {
+                    // Singleplayer environment
+                    NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
+                } else {
+                    // Multiplayer server
+                    NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                            new OverlayTagPacket(tag, add));
+                }
             } else if (player.level().isClientSide()) {
-                // Client-side
+                // Client-side in multiplayer
                 suppressClientUpdate = true;
-                // Send packet to server to update server-side data
                 NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
             }
         }

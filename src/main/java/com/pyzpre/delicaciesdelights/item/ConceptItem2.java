@@ -25,7 +25,7 @@ public class ConceptItem2 extends Item {
 
         if (entity instanceof Player player) {
             if (!world.isClientSide) {
-                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200);
+                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "SomeOtherOverlay", true, false);
                 DebuffManager.addDebuffTag(player, debuffTag);

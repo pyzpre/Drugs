@@ -6,8 +6,8 @@ import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import com.pyzpre.delicaciesdelights.network.OverlaySyncPacket;
 import com.pyzpre.delicaciesdelights.network.RequestOverlayResourcesPacket;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
@@ -28,7 +28,8 @@ import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = DelicaciesDelights.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class OverlayRenderer {
-    private static final Map<ResourceLocation, Float> currentAlphas = new HashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverlayRenderer.class);
+    private static final Map<String, Float> currentAlphas = new HashMap<>();  // Use tag instead of ResourceLocation
     private static OverlayMetadata currentOverlay = null;
     private static boolean shouldRenderOverlays = false;
     private static boolean isFadingOut = false;
@@ -42,12 +43,13 @@ public class OverlayRenderer {
             OverlayMetadata newOverlay = overlays.get(0); // Limit to one overlay at a time
             if (currentOverlay == null || !currentOverlay.getLocation().equals(newOverlay.getLocation())) {
                 currentOverlay = newOverlay;
-                currentAlphas.putIfAbsent(currentOverlay.getLocation(), 0.0f);
+                String overlayTag = getOverlayTag(Minecraft.getInstance().player);  // Get the tag instead of location
+                currentAlphas.putIfAbsent(overlayTag, 0.0f);
                 shouldRenderOverlays = true;
                 isFadingOut = false;
                 currentFrame = 0;
                 startTime = System.currentTimeMillis();
-                adjustFovForCurrentOverlay();
+                adjustFovForCurrentOverlay(Minecraft.getInstance().player);
             }
         }
     }
@@ -67,7 +69,7 @@ public class OverlayRenderer {
             if (currentOverlay != null && (shouldRenderOverlays || currentAlphas.values().stream().anyMatch(alpha -> alpha > 0.0f))) {
 
                 if (shouldRenderOverlays) {
-                    handleEffects();
+                    handleEffects(player);
                 }
 
                 if (isFadingOut) {
@@ -79,7 +81,7 @@ public class OverlayRenderer {
                         return;
                     }
 
-                    Float alpha = currentAlphas.get(currentOverlay.getLocation());
+                    Float alpha = currentAlphas.get(getOverlayTag(player));
 
                     // Handle case where the location is not found
                     if (alpha == null) {
@@ -97,12 +99,13 @@ public class OverlayRenderer {
         }
     }
 
-    private static synchronized void handleEffects() {
+    private static synchronized void handleEffects(Player player) {
         long currentTime = System.currentTimeMillis();
         float elapsedTime = (currentTime - startTime) / 1000.0f;
 
         if (currentOverlay != null) {
             float alpha;
+            String overlayTag = getOverlayTag(player);  // Get tag instead of location
 
             if (currentOverlay.isPulsate()) {
                 if (!resetElapsedTime) {
@@ -112,7 +115,7 @@ public class OverlayRenderer {
                 }
                 alpha = 0.05f * (1 - (float) Math.cos((elapsedTime / currentOverlay.getPulsateDuration()) * 2 * Math.PI));
             } else {
-                alpha = currentAlphas.getOrDefault(currentOverlay.getLocation(), 0.0f);
+                alpha = currentAlphas.getOrDefault(overlayTag, 0.0f);
                 if (alpha < 0.1f) {
                     alpha += currentOverlay.getAlphaIncrement();
                     if (alpha > 0.1f) {
@@ -122,32 +125,37 @@ public class OverlayRenderer {
                 resetElapsedTime = false;
             }
 
-            currentAlphas.put(currentOverlay.getLocation(), alpha);
+            currentAlphas.put(overlayTag, alpha);
             updateCurrentFrame(elapsedTime);
         }
     }
 
     private static synchronized void fadeOutEffects(Player player) {
         if (currentOverlay != null) {
-            Float alpha = currentAlphas.get(currentOverlay.getLocation());
+            String tag = getOverlayTag(player);
+            Float alpha = currentAlphas.get(tag);
             if (alpha != null && alpha > 0.0f) {
                 alpha -= currentOverlay.getAlphaIncrement();
                 if (alpha < 0.0f) {
                     alpha = 0.0f;
                 }
-                currentAlphas.put(currentOverlay.getLocation(), alpha);
+                currentAlphas.put(tag, alpha);
             }
 
             if (alpha != null && alpha == 0.0f) {
-                String tag = getOverlayTag(currentOverlay);
+
                 if (tag != null) {
                     OverlayManager.updateOverlayTag(player, tag, false, false);
+                } else {
+                    LOGGER.warn("No associated tag found for the current overlay.");
                 }
+
                 clearCurrentOverlay();
             }
+        } else {
+            LOGGER.info("No current overlay to fade out.");
         }
     }
-
 
     private static synchronized void clearCurrentOverlay() {
         currentOverlay = null;
@@ -156,10 +164,14 @@ public class OverlayRenderer {
         resetElapsedTime = false;
     }
 
-    private static String getOverlayTag(OverlayMetadata overlay) {
+    private static String getOverlayTag(Player player) {
+        CompoundTag persistentData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+
         for (Map.Entry<String, List<OverlayMetadata>> entry : OverlayManager.getOverlayMap().entrySet()) {
-            if (entry.getValue().contains(overlay)) {
-                return entry.getKey();
+            String tag = entry.getKey();
+            if (persistentData.contains(tag)) {
+                // If the player's data contains this tag, we assume it is the correct one
+                return tag;
             }
         }
         return null;
@@ -185,7 +197,6 @@ public class OverlayRenderer {
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
-
     }
 
     private static void updateCurrentFrame(float elapsedTime) {
@@ -197,11 +208,26 @@ public class OverlayRenderer {
 
     public static void handleSyncPacket(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;  // Ensure this is specific to the current player
-            if (packet.getOverlays().isEmpty()) {
-                OverlayRenderer.startFadingOut();  // Fade out only for this player
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {  // Ensure the player is not null
+                if (packet.getOverlays().isEmpty()) {
+                    OverlayRenderer.startFadingOut();  // Stop rendering the overlay if no overlays are active
+                } else {
+                    // Attempt to find the corresponding overlay tag for the resources
+                    String tag = getOverlayTag(player);
+                    if (tag != null) {
+                        List<OverlayMetadata> overlays = OverlayManager.getOverlays(tag);
+                        if (!overlays.isEmpty()) {
+                            OverlayRenderer.addOverlaysToRender(overlays);
+                        } else {
+                            LOGGER.warn("No overlays found for tag '{}' in the manager.", tag);
+                        }
+                    } else {
+                        LOGGER.warn("No overlay tag found for player '{}'", player.getName().getString());
+                    }
+                }
             } else {
-                OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
+                LOGGER.warn("Player was null when processing OverlaySyncPacket.");
             }
         });
         ctx.get().setPacketHandled(true);
@@ -212,9 +238,21 @@ public class OverlayRenderer {
         if (overlays.isEmpty()) {
             startFadingOut();
         } else {
-            addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
+            // Attempt to find the corresponding overlay tag for the resources
+            String tag = getOverlayTag(Minecraft.getInstance().player);
+            if (tag != null) {
+                List<OverlayMetadata> metadataList = OverlayManager.getOverlays(tag);
+                if (!metadataList.isEmpty()) {
+                    addOverlaysToRender(metadataList);
+                } else {
+                    LOGGER.warn("No metadata found for tag '{}'.", tag);
+                }
+            } else {
+                LOGGER.warn("No overlay tag found for syncing overlays.");
+            }
         }
     }
+
 
     public static void handleRequestOverlayResourcesPacket(RequestOverlayResourcesPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
@@ -227,25 +265,29 @@ public class OverlayRenderer {
                     resourceLocations.addAll(metadata.getFrames());
                 }
                 NetworkSetup.getChannel().send(PacketDistributor.SERVER.noArg(), new RequestOverlayResourcesPacket(resourceLocations));
+            } else {
+                LOGGER.warn("Player was null when processing RequestOverlayResourcesPacket.");
             }
         });
         ctx.get().setPacketHandled(true);
     }
 
-    private static void adjustFovForCurrentOverlay() {
-        if (currentOverlay != null) {
-            fovAdjustment = currentOverlay.getFovChange(); // Set the FOV change directly
+
+    private static void adjustFovForCurrentOverlay(Player player) {
+        String overlayTag = getOverlayTag(player);
+        if (overlayTag != null && OverlayManager.getOverlayMap().containsKey(overlayTag)) {
+            OverlayMetadata metadata = OverlayManager.getOverlayMap().get(overlayTag).get(0);
+            fovAdjustment = metadata.getFovChange(); // Set the FOV change based on tag
+            // Log the overlay and FOV change
         } else {
             fovAdjustment = 0.0f; // Reset if no overlay is active
+            // Log that there is no active overlay
         }
-
-        // Log the final FOV modifier value
-        System.out.println("Final FOV Adjustment: " + fovAdjustment);
     }
 
     private static void resetFovAdjustment() {
         fovAdjustment = 0.0f;
-        System.out.println("Resetting FOV Adjustment to default");
+        // Log the reset of FOV adjustment
     }
 
     @SubscribeEvent
@@ -256,9 +298,7 @@ public class OverlayRenderer {
         // Ensure adjustedFov stays within reasonable bounds
         adjustedFov = Math.max(0.5f, Math.min(adjustedFov, 26.6f)); // You can adjust these bounds as needed
 
-        System.out.println("Base FOV: " + baseFov + " Adjusted FOV: " + adjustedFov);
+
         event.setNewFovModifier(adjustedFov);
     }
-
 }
-
