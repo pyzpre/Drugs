@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 
 @Mod.EventBusSubscriber(modid = DelicaciesDelights.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.DEDICATED_SERVER)
 public class ServerPlayerTickHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerPlayerTickHandler.class);
 
     // Map to track the effect state for each player
     private static final ConcurrentMap<Player, Boolean> playerEffectActiveMap = new ConcurrentHashMap<>();
