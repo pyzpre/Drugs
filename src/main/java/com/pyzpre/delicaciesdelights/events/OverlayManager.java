@@ -52,10 +52,17 @@ public class OverlayManager {
 
         CompoundTag persistentData = rootPersistentData.getCompound(Player.PERSISTED_NBT_TAG);
 
+        // Clear existing tags if a new tag is being added
         if (add) {
-            persistentData.putBoolean(tag, true);
+            // Iterate over all possible tags and remove them
+            for (String existingTag : OVERLAY_MAP.keySet()) {
+                if (persistentData.contains(existingTag)) {
+                    persistentData.remove(existingTag);
+                }
+            }
+            persistentData.putBoolean(tag, true);  // Add the new tag
         } else {
-            persistentData.remove(tag);
+            persistentData.remove(tag);  // Remove the specified tag
         }
 
         rootPersistentData.put(Player.PERSISTED_NBT_TAG, persistentData);
