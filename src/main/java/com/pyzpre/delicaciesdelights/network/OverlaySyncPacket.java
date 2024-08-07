@@ -5,12 +5,15 @@ import com.pyzpre.delicaciesdelights.events.OverlayRenderer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class OverlaySyncPacket {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OverlaySyncPacket.class);
     private final List<ResourceLocation> overlays;
 
     public OverlaySyncPacket(List<ResourceLocation> overlays) {
@@ -21,6 +24,7 @@ public class OverlaySyncPacket {
         buf.writeInt(packet.overlays.size());
         for (ResourceLocation overlay : packet.overlays) {
             buf.writeResourceLocation(overlay);
+            LOGGER.info("Encoded overlay: {}", overlay);
         }
     }
 
@@ -28,20 +32,25 @@ public class OverlaySyncPacket {
         int size = buf.readInt();
         List<ResourceLocation> overlays = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            overlays.add(buf.readResourceLocation());
+            ResourceLocation overlay = buf.readResourceLocation();
+            overlays.add(overlay);
+            LOGGER.info("Decoded overlay: {}", overlay);
         }
-        return new OverlaySyncPacket(overlays);
+        OverlaySyncPacket packet = new OverlaySyncPacket(overlays);
+        LOGGER.info("Decoded packet with {} overlays.", overlays.size());
+        return packet;
     }
 
     public static void handle(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            if (packet.getOverlays().isEmpty()) {
-                OverlayRenderer.startFadingOut();
+        NetworkEvent.Context context = ctx.get();
+        context.enqueueWork(() -> {
+            if (context.getDirection().getReceptionSide().isClient()) {
+                ClientOverlaySyncPacketHandler.handle(packet, ctx);
             } else {
-                OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
+                ServerOverlaySyncPacketHandler.handle(packet, ctx);
             }
         });
-        ctx.get().setPacketHandled(true);
+        context.setPacketHandled(true);
     }
 
     public List<ResourceLocation> getOverlays() {

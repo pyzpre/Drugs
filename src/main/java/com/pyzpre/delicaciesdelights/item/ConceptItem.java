@@ -26,7 +26,7 @@ public class ConceptItem extends Item {
 
         if (entity instanceof Player player) {
             if (!world.isClientSide) {
-                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200);
+                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.HEAL, 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "Unanchored", true, false);
                 DebuffManager.addDebuffTag(player, debuffTag);

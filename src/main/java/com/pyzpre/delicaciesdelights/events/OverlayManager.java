@@ -4,11 +4,11 @@ import com.pyzpre.delicaciesdelights.DelicaciesDelights;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import com.pyzpre.delicaciesdelights.network.OverlayTagPacket;
 import com.pyzpre.delicaciesdelights.network.RequestOverlayResourcesPacket;
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
 import org.slf4j.Logger;
@@ -27,10 +27,10 @@ public class OverlayManager {
 
     static {
         OVERLAY_MAP.put("Unanchored", List.of(
-                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/badapple"), 0.0001f, 0.1f, true, 4.0f, 100)
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/snow"), 0.0001f, 0f, true, 4.0f, 100)
         ));
         OVERLAY_MAP.put("SomeOtherOverlay", List.of(
-                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/rocket"), 0.0001f, 0.0f, false, 1.0f, 100)
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/snow"), 0.0001f, 0.0f, false, 1.0f, 100)
         ));
     }
 
@@ -44,21 +44,22 @@ public class OverlayManager {
     }
 
     public static void updateOverlayTag(Player player, String tag, boolean add, boolean fromNetwork) {
+        LOGGER.info("Updating overlay tag for player {}: {} | Add: {} | From Network: {}", player.getName().getString(), tag, add, fromNetwork);
+
         CompoundTag rootPersistentData = player.getPersistentData();
         if (!rootPersistentData.contains(Player.PERSISTED_NBT_TAG, 10)) { // 10 is the ID for a compound tag
+            LOGGER.info("Creating new compound tag for player: {}", player.getName().getString());
             rootPersistentData.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
         }
 
         CompoundTag persistentData = rootPersistentData.getCompound(Player.PERSISTED_NBT_TAG);
 
         if (add) {
-            LOGGER.info("Adding overlay tag: {}", tag);
+            LOGGER.info("Adding overlay tag: {} for player: {}", tag, player.getName().getString());
             persistentData.putBoolean(tag, true);
-            LOGGER.info("Added overlay tag: {}. Current Persistent Data after update: {}", tag, persistentData);
         } else {
-            LOGGER.info("Removing overlay tag: {}", tag);
+            LOGGER.info("Removing overlay tag: {} for player: {}", tag, player.getName().getString());
             persistentData.remove(tag);
-            LOGGER.info("Removed overlay tag: {}. Current Persistent Data after update: {}", tag, persistentData);
         }
 
         rootPersistentData.put(Player.PERSISTED_NBT_TAG, persistentData);
@@ -66,10 +67,11 @@ public class OverlayManager {
         if (!fromNetwork) {
             MinecraftServer server = player.getServer();
             if (server != null && server.isSingleplayer()) {
+                LOGGER.info("Sending overlay tag packet to server (singleplayer) for player: {} | Tag: {}", player.getName().getString(), tag);
                 // Singleplayer environment
-                LOGGER.info("Singleplayer environment detected.");
                 NetworkSetup.getChannel().sendToServer(new OverlayTagPacket(tag, add));
             } else if (player.level().isClientSide()) {
+                LOGGER.info("Sending overlay tag packet to server (client-side) for player: {} | Tag: {}", player.getName().getString(), tag);
                 // Client-side
                 suppressClientUpdate = true;
                 // Send packet to server to update server-side data
@@ -78,11 +80,12 @@ public class OverlayManager {
         }
     }
 
+
     public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
         if (overlays.isEmpty()) {
             startFadingOut();
         } else {
-            addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
+            addOverlaysToRender(getOverlaysByLocations(overlays));
         }
     }
 

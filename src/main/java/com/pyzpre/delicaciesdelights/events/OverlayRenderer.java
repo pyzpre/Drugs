@@ -34,6 +34,7 @@ public class OverlayRenderer {
     private static long startTime = System.currentTimeMillis();
     private static boolean resetElapsedTime = false;
     private static int currentFrame = 0;
+    private static float fovAdjustment = 0.0f;
 
     public static synchronized void addOverlaysToRender(List<OverlayMetadata> overlays) {
         if (!overlays.isEmpty()) {
@@ -45,6 +46,8 @@ public class OverlayRenderer {
                 isFadingOut = false;
                 currentFrame = 0;
                 startTime = System.currentTimeMillis();
+                adjustFovForCurrentOverlay();
+                LOGGER.info("Added new overlay to render: {}", currentOverlay.getLocation());
             }
         }
     }
@@ -52,6 +55,8 @@ public class OverlayRenderer {
     public static synchronized void startFadingOut() {
         isFadingOut = true;
         shouldRenderOverlays = false;
+        resetFovAdjustment();
+        LOGGER.info("Starting to fade out overlay: {}", currentOverlay != null ? currentOverlay.getLocation() : "None");
     }
 
     @SubscribeEvent
@@ -72,7 +77,6 @@ public class OverlayRenderer {
 
                 if (player != null && mc.level != null) {
                     if (currentOverlay == null) {
-                        LOGGER.warn("Current overlay is null. Skipping rendering.");
                         return;
                     }
 
@@ -80,7 +84,6 @@ public class OverlayRenderer {
 
                     // Handle case where the location is not found
                     if (alpha == null) {
-                        LOGGER.warn("Alpha value for current overlay location {} not found.", currentOverlay.getLocation());
                         clearCurrentOverlay();
                         return;
                     }
@@ -140,18 +143,19 @@ public class OverlayRenderer {
                 String tag = getOverlayTag(currentOverlay);
                 if (tag != null) {
                     OverlayManager.updateOverlayTag(player, tag, false, false);
-                    LOGGER.info("Removing overlay tag in OverlayRenderer: {}", tag);
                 }
                 clearCurrentOverlay();
             }
         }
     }
 
+
     private static synchronized void clearCurrentOverlay() {
         currentOverlay = null;
         currentAlphas.clear();
         isFadingOut = false;
         resetElapsedTime = false;
+        LOGGER.info("Cleared current overlay.");
     }
 
     private static String getOverlayTag(OverlayMetadata overlay) {
@@ -183,6 +187,8 @@ public class OverlayRenderer {
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
+
+        LOGGER.info("Rendered overlay frame: {}", frameLocation);
     }
 
     private static void updateCurrentFrame(float elapsedTime) {
@@ -194,14 +200,17 @@ public class OverlayRenderer {
 
     public static void handleSyncPacket(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            Player player = Minecraft.getInstance().player;  // Ensure this is specific to the current player
             if (packet.getOverlays().isEmpty()) {
-                startFadingOut();
+                OverlayRenderer.startFadingOut();  // Fade out only for this player
             } else {
-                addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
+                OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
             }
+            LOGGER.info("Client received overlay sync packet with {} overlays for player {}.", packet.getOverlays().size(), player.getName().getString());
         });
         ctx.get().setPacketHandled(true);
     }
+
 
     public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
         if (overlays.isEmpty()) {
@@ -209,6 +218,7 @@ public class OverlayRenderer {
         } else {
             addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
         }
+        LOGGER.info("Syncing {} overlays.", overlays.size());
     }
 
     public static void handleRequestOverlayResourcesPacket(RequestOverlayResourcesPacket packet, Supplier<NetworkEvent.Context> ctx) {
@@ -222,8 +232,21 @@ public class OverlayRenderer {
                     resourceLocations.addAll(metadata.getFrames());
                 }
                 NetworkSetup.getChannel().send(PacketDistributor.SERVER.noArg(), new RequestOverlayResourcesPacket(resourceLocations));
+                LOGGER.info("Requested overlay resources: {}", resourceLocations.size());
             }
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    private static void adjustFovForCurrentOverlay() {
+        if (currentOverlay != null) {
+            fovAdjustment = currentOverlay.getFovChange();
+            LOGGER.info("Adjusting FOV for current overlay: {} by {}", currentOverlay.getLocation(), fovAdjustment);
+        }
+    }
+
+    private static void resetFovAdjustment() {
+        fovAdjustment = 0.0f;
+        LOGGER.info("Resetting FOV adjustment.");
     }
 }
