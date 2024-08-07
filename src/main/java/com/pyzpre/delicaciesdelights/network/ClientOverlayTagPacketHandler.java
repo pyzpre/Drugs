@@ -17,13 +17,8 @@ public class ClientOverlayTagPacketHandler {
         context.enqueueWork(() -> {
             Player clientPlayer = Minecraft.getInstance().player;
             if (clientPlayer != null) {
-                // Handle the network update only if updates are not suppressed
-                if (!OverlayManager.suppressClientUpdate) {
-                    OverlayManager.handleNetworkUpdate(clientPlayer, packet.tag, packet.add);
-                    LOGGER.info("Packet handled on client: {}", packet);
-                } else {
-                    LOGGER.warn("Client updates are suppressed while handling packet: {}", packet);
-                }
+                OverlayManager.handleNetworkUpdate(clientPlayer, packet.tag, packet.add);
+                LOGGER.info("Packet handled on client: {}", packet);
             } else {
                 LOGGER.warn("Client player was null while handling packet: {}", packet);
             }
