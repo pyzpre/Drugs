@@ -12,7 +12,6 @@ public class ServerOverlaySyncPacketHandler {
 
     public static void handle(OverlaySyncPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            LOGGER.info("Handling overlay sync packet on server with {} overlays.", packet.getOverlays().size());
             OverlayManager.syncOverlays(packet.getOverlays());
         });
         ctx.get().setPacketHandled(true);

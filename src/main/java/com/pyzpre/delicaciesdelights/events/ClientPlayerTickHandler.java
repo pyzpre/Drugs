@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 
 @Mod.EventBusSubscriber(modid = DelicaciesDelights.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientPlayerTickHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientPlayerTickHandler.class);
 
     // Map to track the effect state for each player
     private static final ConcurrentMap<Player, Boolean> playerEffectActiveMap = new ConcurrentHashMap<>();
@@ -44,14 +43,12 @@ public class ClientPlayerTickHandler {
         ConcurrentMap<ResourceLocation, Boolean> activeOverlays = new ConcurrentHashMap<>();
         boolean anyEffectActive = false;
 
-        LOGGER.info("Handling client tick for player: {}", player.getName().getString());
 
         // Iterate over all active effects for this player
         for (MobEffectInstance effect : player.getActiveEffects()) {
             anyEffectActive = true;
             String effectDescriptionId = effect.getEffect().getDescriptionId();
 
-            LOGGER.info("Processing effect: {} for player: {}", effectDescriptionId, player.getName().getString());
 
             // Only process overlays related to the player's specific active effects
             for (String key : OverlayManager.getOverlayMap().keySet()) {
@@ -60,7 +57,6 @@ public class ClientPlayerTickHandler {
                     if (overlays != null) {
                         for (OverlayMetadata overlay : overlays) {
                             activeOverlays.putIfAbsent(overlay.getLocation(), Boolean.TRUE);
-                            LOGGER.info("Added overlay {} for effect {} to player {}", overlay.getLocation(), effectDescriptionId, player.getName().getString());
                         }
                     }
                 }
@@ -71,10 +67,8 @@ public class ClientPlayerTickHandler {
         playerEffectActiveMap.put(player, anyEffectActive);
 
         if (anyEffectActive) {
-            LOGGER.info("Rendering {} active overlays for player {}.", activeOverlays.size(), player.getName().getString());
             OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(new ArrayList<>(activeOverlays.keySet())));
         } else {
-            LOGGER.info("No active effects detected, stopping overlay rendering for player {}.", player.getName().getString());
             OverlayRenderer.startFadingOut();
         }
     }

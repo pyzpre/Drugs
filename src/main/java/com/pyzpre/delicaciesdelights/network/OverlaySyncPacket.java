@@ -24,7 +24,6 @@ public class OverlaySyncPacket {
         buf.writeInt(packet.overlays.size());
         for (ResourceLocation overlay : packet.overlays) {
             buf.writeResourceLocation(overlay);
-            LOGGER.info("Encoded overlay: {}", overlay);
         }
     }
 
@@ -34,10 +33,8 @@ public class OverlaySyncPacket {
         for (int i = 0; i < size; i++) {
             ResourceLocation overlay = buf.readResourceLocation();
             overlays.add(overlay);
-            LOGGER.info("Decoded overlay: {}", overlay);
         }
         OverlaySyncPacket packet = new OverlaySyncPacket(overlays);
-        LOGGER.info("Decoded packet with {} overlays.", overlays.size());
         return packet;
     }
 

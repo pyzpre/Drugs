@@ -23,27 +23,23 @@ public class NetworkSetup {
     public static void registerMessages() {
         int id = 0;
 
-        LOGGER.info("Registering OverlayTagPacket with ID: {}", id);
         CHANNEL.messageBuilder(OverlayTagPacket.class, id++)
                 .encoder(OverlayTagPacket::encode)
                 .decoder(OverlayTagPacket::decode)
                 .consumerMainThread(OverlayTagPacket::handle)
                 .add();
 
-        LOGGER.info("Registering OverlaySyncPacket with ID: {}", id);
         CHANNEL.messageBuilder(OverlaySyncPacket.class, id++)
                 .encoder(OverlaySyncPacket::encode)
                 .decoder(OverlaySyncPacket::decode)
                 .consumerMainThread(OverlaySyncPacket::handle)
                 .add();
 
-        LOGGER.info("Registering RequestOverlayResourcesPacket with ID: {}", id);
         CHANNEL.messageBuilder(RequestOverlayResourcesPacket.class, id++)
                 .encoder(RequestOverlayResourcesPacket::toBytes)
                 .decoder(RequestOverlayResourcesPacket::new)
                 .consumerMainThread(RequestOverlayResourcesPacket::handle)
                 .add();
 
-        LOGGER.info("All network messages registered successfully.");
     }
 }

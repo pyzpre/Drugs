@@ -6,10 +6,12 @@ import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import com.pyzpre.delicaciesdelights.network.OverlaySyncPacket;
 import com.pyzpre.delicaciesdelights.network.RequestOverlayResourcesPacket;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ComputeFovModifierEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -26,7 +28,6 @@ import java.util.function.Supplier;
 
 @Mod.EventBusSubscriber(modid = DelicaciesDelights.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class OverlayRenderer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OverlayRenderer.class);
     private static final Map<ResourceLocation, Float> currentAlphas = new HashMap<>();
     private static OverlayMetadata currentOverlay = null;
     private static boolean shouldRenderOverlays = false;
@@ -47,7 +48,6 @@ public class OverlayRenderer {
                 currentFrame = 0;
                 startTime = System.currentTimeMillis();
                 adjustFovForCurrentOverlay();
-                LOGGER.info("Added new overlay to render: {}", currentOverlay.getLocation());
             }
         }
     }
@@ -56,7 +56,6 @@ public class OverlayRenderer {
         isFadingOut = true;
         shouldRenderOverlays = false;
         resetFovAdjustment();
-        LOGGER.info("Starting to fade out overlay: {}", currentOverlay != null ? currentOverlay.getLocation() : "None");
     }
 
     @SubscribeEvent
@@ -155,7 +154,6 @@ public class OverlayRenderer {
         currentAlphas.clear();
         isFadingOut = false;
         resetElapsedTime = false;
-        LOGGER.info("Cleared current overlay.");
     }
 
     private static String getOverlayTag(OverlayMetadata overlay) {
@@ -188,7 +186,6 @@ public class OverlayRenderer {
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
 
-        LOGGER.info("Rendered overlay frame: {}", frameLocation);
     }
 
     private static void updateCurrentFrame(float elapsedTime) {
@@ -206,7 +203,6 @@ public class OverlayRenderer {
             } else {
                 OverlayRenderer.addOverlaysToRender(OverlayManager.getOverlaysByLocations(packet.getOverlays()));
             }
-            LOGGER.info("Client received overlay sync packet with {} overlays for player {}.", packet.getOverlays().size(), player.getName().getString());
         });
         ctx.get().setPacketHandled(true);
     }
@@ -218,7 +214,6 @@ public class OverlayRenderer {
         } else {
             addOverlaysToRender(OverlayManager.getOverlaysByLocations(overlays));
         }
-        LOGGER.info("Syncing {} overlays.", overlays.size());
     }
 
     public static void handleRequestOverlayResourcesPacket(RequestOverlayResourcesPacket packet, Supplier<NetworkEvent.Context> ctx) {
@@ -232,7 +227,6 @@ public class OverlayRenderer {
                     resourceLocations.addAll(metadata.getFrames());
                 }
                 NetworkSetup.getChannel().send(PacketDistributor.SERVER.noArg(), new RequestOverlayResourcesPacket(resourceLocations));
-                LOGGER.info("Requested overlay resources: {}", resourceLocations.size());
             }
         });
         ctx.get().setPacketHandled(true);
@@ -240,13 +234,31 @@ public class OverlayRenderer {
 
     private static void adjustFovForCurrentOverlay() {
         if (currentOverlay != null) {
-            fovAdjustment = currentOverlay.getFovChange();
-            LOGGER.info("Adjusting FOV for current overlay: {} by {}", currentOverlay.getLocation(), fovAdjustment);
+            fovAdjustment = currentOverlay.getFovChange(); // Set the FOV change directly
+        } else {
+            fovAdjustment = 0.0f; // Reset if no overlay is active
         }
+
+        // Log the final FOV modifier value
+        System.out.println("Final FOV Adjustment: " + fovAdjustment);
     }
 
     private static void resetFovAdjustment() {
         fovAdjustment = 0.0f;
-        LOGGER.info("Resetting FOV adjustment.");
+        System.out.println("Resetting FOV Adjustment to default");
     }
+
+    @SubscribeEvent
+    public static void onComputeFovModifier(ComputeFovModifierEvent event) {
+        float baseFov = event.getNewFovModifier();
+        float adjustedFov = baseFov * (1.0f + fovAdjustment);
+
+        // Ensure adjustedFov stays within reasonable bounds
+        adjustedFov = Math.max(0.5f, Math.min(adjustedFov, 26.6f)); // You can adjust these bounds as needed
+
+        System.out.println("Base FOV: " + baseFov + " Adjusted FOV: " + adjustedFov);
+        event.setNewFovModifier(adjustedFov);
+    }
+
 }
+

@@ -19,7 +19,6 @@ public class ServerOverlayTagPacketHandler {
             if (serverPlayer != null) {
                 // Validate and update overlay tag
                 OverlayManager.updateOverlayTag(serverPlayer, packet.tag, packet.add, true);
-                LOGGER.info("Packet handled on server, sent back to client: {}", packet);
 
                 // Send packet back to client
                 NetworkSetup.getChannel().sendTo(

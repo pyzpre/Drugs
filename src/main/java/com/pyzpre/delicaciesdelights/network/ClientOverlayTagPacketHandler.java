@@ -18,7 +18,6 @@ public class ClientOverlayTagPacketHandler {
             Player clientPlayer = Minecraft.getInstance().player;
             if (clientPlayer != null) {
                 OverlayManager.handleNetworkUpdate(clientPlayer, packet.tag, packet.add);
-                LOGGER.info("Packet handled on client: {}", packet);
             } else {
                 LOGGER.warn("Client player was null while handling packet: {}", packet);
             }
