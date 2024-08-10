@@ -1,5 +1,6 @@
 package com.pyzpre.delicaciesdelights.index;
 
+import com.pyzpre.delicaciesdelights.effect.CrazyEffect;
 import com.pyzpre.delicaciesdelights.effect.UnanchoredEffect;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -15,6 +16,8 @@ public class EffectRegistry {
 
     public static final RegistryObject<MobEffect> UNANCHORED = MOB_EFFECTS.register("unanchored",
             () -> new UnanchoredEffect(MobEffectCategory.NEUTRAL, 800000980));
+    public static final RegistryObject<MobEffect> CRAZY = MOB_EFFECTS.register("crazy",
+            () -> new CrazyEffect(MobEffectCategory.NEUTRAL, 800000980));
 
     public static void register(IEventBus eventBus) {
         MOB_EFFECTS.register(eventBus);

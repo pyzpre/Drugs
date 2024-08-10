@@ -4,6 +4,8 @@ import com.pyzpre.delicaciesdelights.block.injectionstand.InjectionStandScreen;
 import com.pyzpre.delicaciesdelights.index.*;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -13,8 +15,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import com.pyzpre.delicaciesdelights.events.ClientEventSubscriber;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +32,8 @@ public class DelicaciesDelights {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);
-        modEventBus.addListener(this::setup);
-        modEventBus.addListener(this::doClientStuff);
+        modEventBus.addListener(this::clientSetup);
+
 
         ITEMS.register(modEventBus);
         BlockRegistry.BLOCKS.register(modEventBus);
@@ -45,16 +47,11 @@ public class DelicaciesDelights {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    private void setup(final FMLCommonSetupEvent event) {
-        NetworkSetup.registerMessages();
-    }
-
-    private void doClientStuff(final FMLClientSetupEvent event) {
-
+    private void clientSetup(final FMLClientSetupEvent event) {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // Common setup tasks
+        NetworkSetup.registerMessages();
     }
 
     @SubscribeEvent
