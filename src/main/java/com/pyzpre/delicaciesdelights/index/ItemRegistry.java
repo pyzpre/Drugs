@@ -26,7 +26,7 @@ public class ItemRegistry {
                     .alwaysEat()
                     .nutrition(1)
                     .saturationMod(2f)
-                    .build()), "SomeOtherOverlay", "Nothing"));
+                    .build()), "SomeOtherOverlay", "Schizophrenic"));
 
     public static final RegistryObject<Item> INJECTION_STAND = ITEMS.register("injection_stand",
             () -> new BlockItem(BlockRegistry.INJECTION_STAND.get(), new Item.Properties()));

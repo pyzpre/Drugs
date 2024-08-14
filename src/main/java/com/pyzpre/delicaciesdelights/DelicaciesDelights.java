@@ -4,8 +4,6 @@ import com.pyzpre.delicaciesdelights.block.injectionstand.InjectionStandScreen;
 import com.pyzpre.delicaciesdelights.index.*;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Animal;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -15,8 +13,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import com.pyzpre.delicaciesdelights.events.ClientEventSubscriber;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

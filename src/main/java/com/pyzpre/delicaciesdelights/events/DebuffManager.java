@@ -1,5 +1,6 @@
 package com.pyzpre.delicaciesdelights.events;
 
+import com.pyzpre.delicaciesdelights.index.EffectRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
@@ -20,6 +21,7 @@ public class DebuffManager {
         DEBUFF_MAP.put("Slowness", List.of(MobEffects.MOVEMENT_SLOWDOWN));
         DEBUFF_MAP.put("Sickness", List.of(MobEffects.CONFUSION, MobEffects.POISON));
         DEBUFF_MAP.put("Blackout", List.of(MobEffects.BLINDNESS, MobEffects.CONFUSION));
+        DEBUFF_MAP.put("Schizophrenic", List.of(EffectRegistry.CRAZY.get()));
     }
 
     public static List<MobEffect> getDebuff(String tag) {

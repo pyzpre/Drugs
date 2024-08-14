@@ -1,4 +1,4 @@
-package com.pyzpre.delicaciesdelights.events;
+package com.pyzpre.delicaciesdelights.effect.Schizophrenic;
 
 import com.pyzpre.delicaciesdelights.index.EffectRegistry;
 import net.minecraft.client.Minecraft;
@@ -19,15 +19,36 @@ import java.util.Random;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = "delicacies_delights", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class ClientEventSubscriber {
+public class SchizophrenicVisionEvents {
 
     private static final Map<UUID, Entity> entityToReplacementMap = new HashMap<>();
     private static final EntityType<?>[] replacementTypes = new EntityType[]{
-            EntityType.LLAMA, EntityType.SQUID, EntityType.COW, EntityType.HORSE, EntityType.PIG, EntityType.VILLAGER, EntityType.SHEEP,
-            EntityType.AXOLOTL
+            EntityType.ALLAY,
+            EntityType.AXOLOTL,
+            EntityType.BAT,
+            EntityType.CAMEL,
+            EntityType.CAT,
+            EntityType.CHICKEN,
+            EntityType.COW,
+            EntityType.DONKEY,
+            EntityType.FROG,
+            EntityType.HORSE,
+            EntityType.MOOSHROOM,
+            EntityType.OCELOT,
+            EntityType.PIG,
+            EntityType.SHEEP,
+            EntityType.SNIFFER,
+            EntityType.TURTLE,
+            EntityType.VILLAGER,
+            EntityType.WANDERING_TRADER,
+            EntityType.FOX,
+            EntityType.GOAT,
+            EntityType.PANDA,
+            EntityType.WOLF,
+            EntityType.ILLUSIONER
     };
     private static final Random random = new Random();
-    private static final Logger LOGGER = LogManager.getLogger(ClientEventSubscriber.class);
+    private static final Logger LOGGER = LogManager.getLogger(SchizophrenicVisionEvents.class);
 
     @SubscribeEvent
     public static void onRenderLiving(RenderLivingEvent.Pre event) {
