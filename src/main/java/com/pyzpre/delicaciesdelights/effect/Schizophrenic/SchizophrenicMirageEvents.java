@@ -27,8 +27,9 @@ import java.util.Random;
 @Mod.EventBusSubscriber(modid = "delicacies_delights", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class SchizophrenicMirageEvents {
 
-    private static BlockPos HologramPos;
+    private static BlockPos hologramPos;
     private static final int DESPAWN_DISTANCE = 10;
+    private static final int MAX_DESPAWN_DISTANCE = 100;
     private static final List<Block> HOLOGRAM_BLOCKS = Arrays.asList(
             Blocks.CHEST,
             Blocks.DIAMOND_ORE,
@@ -43,55 +44,55 @@ public class SchizophrenicMirageEvents {
         if (minecraft.level == null) return;
 
         Player localPlayer = minecraft.player;
-        if (localPlayer == null || !localPlayer.equals(event.player)) return; // Ensure it's the local player
+        if (localPlayer == null || !localPlayer.equals(event.player)) return;
 
         if (localPlayer.level().isClientSide && localPlayer.hasEffect(EffectRegistry.CRAZY.get())) {
-            if (HologramPos == null) {
+            int effectLevel = localPlayer.getEffect(EffectRegistry.CRAZY.get()).getAmplifier();
+            if (effectLevel >= 1) {
+            if (hologramPos == null) {
                 spawnHologram(localPlayer);
             } else {
-                double distance = localPlayer.position().distanceTo(Vec3.atCenterOf(HologramPos));
-                if (distance < DESPAWN_DISTANCE) {
-                    HologramPos = null;
-                    pickRandomHologramBlock(); // Pick a new block for the next hologram
+                double distance = localPlayer.position().distanceTo(Vec3.atCenterOf(hologramPos));
+
+                // Despawn if within the minimum distance or beyond the maximum distance
+                if (distance < DESPAWN_DISTANCE || distance > MAX_DESPAWN_DISTANCE) {
+                    hologramPos = null;
+                    pickRandomHologramBlock();
                 }
             }
-        } else {
-            // If the effect is removed, clear the hologram
-            HologramPos = null;
+        }} else {
+            hologramPos = null;
         }
     }
+
 
     @SubscribeEvent
     public static void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) { // Or use a more appropriate stage
-            if (HologramPos != null) {
-                renderHologram(HologramPos, event.getPoseStack(), event.getPartialTick());
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+            BlockPos posToRender = hologramPos;
+            if (posToRender != null) {
+                renderHologram(posToRender, event.getPoseStack(), event.getPartialTick());
             }
         }
     }
 
-    private static void spawnHologram(Player player) {
-        if (HologramPos == null) {
-            // Define the range around the player where the chest can spawn
-            int searchRadius = 35; // Adjust the max radius as needed
-            int minDistance = 10; // Minimum distance from the player
+    private static synchronized void spawnHologram(Player player) {
+        if (hologramPos == null) {
+            int searchRadius = 35;
+            int minDistance = 10;
 
             Vec3 playerPosition = player.position();
             BlockPos basePos = null;
 
-            // Search for a suitable position within the range
             for (int attempts = 0; attempts < 100; attempts++) {
-                // Generate a random position within the radius
                 double offsetX = (player.getRandom().nextDouble() - 0.5) * 2 * searchRadius;
                 double offsetZ = (player.getRandom().nextDouble() - 0.5) * 2 * searchRadius;
                 Vec3 hologramPosition = playerPosition.add(offsetX, 0, offsetZ);
 
-                // Check if the position is outside the minimum distance
                 if (hologramPosition.distanceTo(playerPosition) < minDistance) {
-                    continue; // Skip this position if it's too close
+                    continue;
                 }
 
-                // Find solid ground at this position
                 BlockPos potentialBasePos = findSolidGround(
                         player.level(),
                         new BlockPos(
@@ -101,27 +102,23 @@ public class SchizophrenicMirageEvents {
                         )
                 );
 
-                // Check if the position is suitable
                 if (isSuitablePosition(player.level(), potentialBasePos)) {
                     basePos = potentialBasePos;
                     break;
                 }
             }
 
-            // If no suitable position is found, do not spawn the chest
             if (basePos != null) {
-                HologramPos = basePos;
+                hologramPos = basePos;
             }
         }
     }
 
-    // Pick a random block from the list for the next hologram
     private static void pickRandomHologramBlock() {
         Random random = new Random();
         currentHologramBlock = HOLOGRAM_BLOCKS.get(random.nextInt(HOLOGRAM_BLOCKS.size()));
     }
 
-    // Helper method to find the first solid block below a position
     private static BlockPos findSolidGround(Level world, BlockPos pos) {
         while (world.isEmptyBlock(pos) && pos.getY() > world.getMinBuildHeight()) {
             pos = pos.below();
@@ -129,7 +126,6 @@ public class SchizophrenicMirageEvents {
         return pos.above();
     }
 
-    // Helper method to check if the position is suitable for the chest
     private static boolean isSuitablePosition(Level world, BlockPos basePos) {
         return world.getBlockState(basePos.below()).isSolid();
     }

@@ -36,10 +36,10 @@ public class SchizophrenicSoundEvents {
         Player player = event.player;
         if (player.level().isClientSide && player.hasEffect(EffectRegistry.CRAZY.get())) {
             if (soundCooldown > 0) {
-                soundCooldown--; // Decrement cooldown each tick
-            } else if (random.nextFloat() < 0.005) { // 0.5% chance each tick, adjust probability as needed
+                soundCooldown--;
+            } else if (random.nextFloat() < 0.005) { // 0.5% chance each tick
                 playRandomSound(player);
-                soundCooldown = SOUND_COOLDOWN_TICKS; // Reset cooldown after playing a sound
+                soundCooldown = SOUND_COOLDOWN_TICKS; // Reset cooldown
             }
         }
     }
