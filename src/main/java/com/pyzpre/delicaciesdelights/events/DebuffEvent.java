@@ -35,7 +35,7 @@ public class DebuffEvent {
                             List<MobEffect> debuffs = DebuffManager.getDebuff(key);
                             if (debuffs != null) {
                                 for (MobEffect debuff : debuffs) {
-                                    effectsToAdd.add(new MobEffectInstance(debuff, 2000)); // 200 ticks = 10 seconds
+                                    effectsToAdd.add(new MobEffectInstance(debuff, 200)); // 200 ticks = 10 seconds
                                 }
                             }
                             keysToRemove.add(key); // Collect keys to be removed

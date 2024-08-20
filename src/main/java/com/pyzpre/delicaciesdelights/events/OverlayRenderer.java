@@ -81,12 +81,13 @@ public class OverlayRenderer {
                         return;
                     }
 
-                    Float alpha = currentAlphas.get(getOverlayTag(player));
+                    String overlayTag = getOverlayTag(player);
+                    Float alpha = currentAlphas.get(overlayTag);
 
-                    // Handle case where the location is not found
+                    // Safeguard against null alpha value
                     if (alpha == null) {
-                        clearCurrentOverlay();
-                        return;
+                        alpha = 0.0f;  // Fallback to a default alpha value
+                        currentAlphas.put(overlayTag, alpha);
                     }
 
                     renderOverlay(event.getGuiGraphics(), alpha);
@@ -99,34 +100,51 @@ public class OverlayRenderer {
         }
     }
 
+
     private static synchronized void handleEffects(Player player) {
         long currentTime = System.currentTimeMillis();
         float elapsedTime = (currentTime - startTime) / 1000.0f;
 
         if (currentOverlay != null) {
-            float alpha;
-            String overlayTag = getOverlayTag(player);  // Get tag instead of location
+            // Retrieve the overlay tag for the player
+            String overlayTag = getOverlayTag(player);
 
-            if (currentOverlay.isPulsate()) {
-                if (!resetElapsedTime) {
-                    startTime = System.currentTimeMillis();
-                    elapsedTime = 0;
-                    resetElapsedTime = true;
+            // Initialize alpha value for the overlay tag if it's not already present
+            Float alpha = currentAlphas.get(overlayTag);
+            if (alpha == null) {
+                // If the tag doesn't require a debuff, initialize the alpha value
+                if (!currentOverlay.requiresDebuffTag()) {
+                    alpha = 0.0f;
+                    currentAlphas.put(overlayTag, alpha);
+                } else {
+                    startFadingOut();  // Start fading out if debuff tag is required but not found
+                    return;
                 }
-                alpha = 0.05f * (1 - (float) Math.cos((elapsedTime / currentOverlay.getPulsateDuration()) * 2 * Math.PI));
-            } else {
-                alpha = currentAlphas.getOrDefault(overlayTag, 0.0f);
-                if (alpha < 0.1f) {
-                    alpha += currentOverlay.getAlphaIncrement();
-                    if (alpha > 0.1f) {
-                        alpha = 0.1f;
-                    }
-                }
-                resetElapsedTime = false;
             }
 
+            // Handle the pulsate effect
+            if (currentOverlay.isPulsate()) {
+                if (!resetElapsedTime) {
+                    startTime = System.currentTimeMillis();  // Reset start time
+                    elapsedTime = 0;  // Reset elapsed time
+                    resetElapsedTime = true;  // Ensure this block only executes once
+                }
+                // Calculate new alpha value based on a sinusoidal pulsate effect
+                alpha = 0.05f * (1 - (float) Math.cos((elapsedTime / currentOverlay.getPulsateDuration()) * 2 * Math.PI));
+            } else {
+                // Increment alpha gradually until it reaches a threshold of 0.1f
+                if (alpha < 0.1f) {
+                    alpha += currentOverlay.getAlphaIncrement();  // Increment alpha
+                    if (alpha > 0.1f) {
+                        alpha = 0.1f;  // Cap alpha at 0.1f
+                    }
+                }
+                resetElapsedTime = false;  // Ensure this block can be revisited
+            }
+
+            // Update the alpha value for the current overlay
             currentAlphas.put(overlayTag, alpha);
-            updateCurrentFrame(elapsedTime);
+            updateCurrentFrame(elapsedTime);  // Update the current frame for rendering
         }
     }
 
@@ -160,6 +178,11 @@ public class OverlayRenderer {
         currentAlphas.clear();
         isFadingOut = false;
         resetElapsedTime = false;
+    }
+
+    private static boolean hasOverlayTag(Player player, String tag) {
+        CompoundTag persistentData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+        return persistentData.contains(tag);
     }
 
     private static String getOverlayTag(Player player) {
@@ -231,7 +254,6 @@ public class OverlayRenderer {
         ctx.get().setPacketHandled(true);
     }
 
-
     public static synchronized void syncOverlays(List<ResourceLocation> overlays) {
         if (overlays.isEmpty()) {
             startFadingOut();
@@ -251,7 +273,6 @@ public class OverlayRenderer {
         }
     }
 
-
     public static void handleRequestOverlayResourcesPacket(RequestOverlayResourcesPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             Minecraft mc = Minecraft.getInstance();
@@ -269,7 +290,6 @@ public class OverlayRenderer {
         });
         ctx.get().setPacketHandled(true);
     }
-
 
     private static void adjustFovForCurrentOverlay(Player player) {
         String overlayTag = getOverlayTag(player);
@@ -295,7 +315,6 @@ public class OverlayRenderer {
 
         // Ensure adjustedFov stays within reasonable bounds
         adjustedFov = Math.max(0.5f, Math.min(adjustedFov, 26.6f)); // You can adjust these bounds as needed
-
 
         event.setNewFovModifier(adjustedFov);
     }

@@ -28,7 +28,7 @@ public class ConceptItem2 extends Item {
                 MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "SomeOtherOverlay", true, false);
-                DebuffManager.addDebuffTag(player, debuffTag);
+                DebuffManager.updateDebuffTag(player, "Schizophrenic", true, false);
             }
         }
         return super.finishUsingItem(stack, world, entity);

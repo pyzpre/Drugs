@@ -13,17 +13,21 @@ public class OverlayMetadata {
     private final boolean pulsate;
     private final float pulsateDuration;
     private final int frameDuration;
+    private final boolean requiresDebuffTag;
     private List<ResourceLocation> frames;
 
-    public OverlayMetadata(ResourceLocation folderPath, float alphaIncrement, float fovChange, boolean pulsate, float pulsateDuration, int frameDuration) {
+    public OverlayMetadata(ResourceLocation folderPath, float alphaIncrement, float fovChange, boolean pulsate, float pulsateDuration, int frameDuration, boolean requiresDebuffTag) {
         this.folderPath = folderPath;
         this.alphaIncrement = alphaIncrement;
         this.fovChange = fovChange;
         this.pulsate = pulsate;
         this.pulsateDuration = pulsateDuration;
         this.frameDuration = frameDuration;
+        this.requiresDebuffTag = requiresDebuffTag;
     }
-
+    public boolean requiresDebuffTag() {
+        return requiresDebuffTag;
+    }
     public List<ResourceLocation> getFrames() {
         if (frames == null) {
             loadFrames();

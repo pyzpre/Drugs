@@ -1,10 +1,15 @@
 package com.pyzpre.delicaciesdelights.events;
 
 import com.pyzpre.delicaciesdelights.index.EffectRegistry;
+import com.pyzpre.delicaciesdelights.network.NetworkSetup;
+import com.pyzpre.delicaciesdelights.network.DebuffTagPacket;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.network.PacketDistributor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,27 +30,66 @@ public class DebuffManager {
     }
 
     public static List<MobEffect> getDebuff(String tag) {
-        List<MobEffect> debuffs = DEBUFF_MAP.get(tag);
-        return debuffs;
+        return DEBUFF_MAP.get(tag);
     }
-
+    public static Map<String, List<MobEffect>> getDebuffMap() {
+        return DEBUFF_MAP;
+    }
     public static boolean hasDebuffTag(Player player, String tag) {
-        boolean hasTag = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).contains(tag);
-        return hasTag;
+        return player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).contains(tag);
     }
 
-    public static void removeDebuffTag(Player player, String tag) {
-        // Ensure only tags that exist in the DEBUFF_MAP are removed
-        if (DEBUFF_MAP.containsKey(tag)) {
-            CompoundTag persistentData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+    public static void updateDebuffTag(Player player, String tag, boolean add, boolean fromNetwork) {
+        CompoundTag rootPersistentData = player.getPersistentData();
+        if (!rootPersistentData.contains(Player.PERSISTED_NBT_TAG, 10)) { // 10 is the ID for a compound tag
+            rootPersistentData.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
+        }
+
+        CompoundTag persistentData = rootPersistentData.getCompound(Player.PERSISTED_NBT_TAG);
+
+        if (add) {
+            persistentData.putBoolean(tag, true);
+        } else {
             persistentData.remove(tag);
-            player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistentData);
+        }
+
+        rootPersistentData.put(Player.PERSISTED_NBT_TAG, persistentData);
+
+        if (!fromNetwork) {
+            MinecraftServer server = player.getServer();
+            if (server != null) {
+                if (server.isSingleplayer()) {
+                    // Singleplayer environment
+                    NetworkSetup.getChannel().sendToServer(new DebuffTagPacket(tag, add));
+                } else {
+                    // Multiplayer server
+                    NetworkSetup.getChannel().send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                            new DebuffTagPacket(tag, add));
+                }
+            } else if (player.level().isClientSide()) {
+                // Client-side in multiplayer
+                NetworkSetup.getChannel().sendToServer(new DebuffTagPacket(tag, add));
+            }
+        }
+    }
+
+    public static void handleNetworkUpdate(Player player, String tag, boolean add) {
+        if (add) {
+            addDebuffTag(player, tag);
+        } else {
+            removeDebuffTag(player, tag);
         }
     }
 
     public static void addDebuffTag(Player player, String tag) {
         CompoundTag persistentData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
         persistentData.putBoolean(tag, true);
+        player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistentData);
+    }
+
+    public static void removeDebuffTag(Player player, String tag) {
+        CompoundTag persistentData = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+        persistentData.remove(tag);
         player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistentData);
     }
 }

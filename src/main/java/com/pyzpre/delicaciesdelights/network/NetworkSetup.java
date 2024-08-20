@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 public class NetworkSetup {
     private static final Logger LOGGER = LoggerFactory.getLogger(NetworkSetup.class);
     private static final String PROTOCOL_VERSION = "1";
-    private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("delicaciesdelights", "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
@@ -23,6 +23,7 @@ public class NetworkSetup {
     public static void registerMessages() {
         int id = 0;
 
+        // Existing overlay packet registrations
         CHANNEL.messageBuilder(OverlayTagPacket.class, id++)
                 .encoder(OverlayTagPacket::encode)
                 .decoder(OverlayTagPacket::decode)
@@ -41,5 +42,22 @@ public class NetworkSetup {
                 .consumerMainThread(RequestOverlayResourcesPacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(DebuffTagPacket.class, id++)
+                .encoder(DebuffTagPacket::encode)
+                .decoder(DebuffTagPacket::decode)
+                .consumerMainThread(DebuffTagPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ClientboundPlayerAbilitiesPacket.class, id++)
+                .encoder(ClientboundPlayerAbilitiesPacket::toBytes)
+                .decoder(ClientboundPlayerAbilitiesPacket::new)
+                .consumerMainThread(ClientboundPlayerAbilitiesPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ServerboundPlayerFallFlyingPacket.class, id++)
+                .encoder(ServerboundPlayerFallFlyingPacket::toBytes)
+                .decoder(ServerboundPlayerFallFlyingPacket::new)
+                .consumerMainThread(ServerboundPlayerFallFlyingPacket::handle)
+                .add();
     }
 }

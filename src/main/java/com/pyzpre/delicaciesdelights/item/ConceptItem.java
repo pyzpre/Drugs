@@ -14,7 +14,6 @@ public class ConceptItem extends Item {
     private final String overlayTag;
     private final String debuffTag;
 
-
     public ConceptItem(Properties properties, String overlayTag, String debuffTag) {
         super(properties);
         this.overlayTag = overlayTag;
@@ -23,16 +22,17 @@ public class ConceptItem extends Item {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity entity) {
-
         if (entity instanceof Player player) {
             if (!world.isClientSide) {
+                // Apply a healing effect to the player
                 MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.HEAL, 200);
                 player.addEffect(effectInstance);
+
+                // Update the overlay and debuff tags with network synchronization
                 OverlayManager.updateOverlayTag(player, "Unanchored", true, false);
-                DebuffManager.addDebuffTag(player, debuffTag);
+                DebuffManager.updateDebuffTag(player, "Schizophrenic", true, false);
             }
         }
         return super.finishUsingItem(stack, world, entity);
     }
 }
-

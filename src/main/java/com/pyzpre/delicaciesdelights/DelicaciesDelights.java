@@ -1,6 +1,8 @@
 package com.pyzpre.delicaciesdelights;
 
 import com.pyzpre.delicaciesdelights.block.injectionstand.InjectionStandScreen;
+import com.pyzpre.delicaciesdelights.effect.ClientTickHandler;
+import com.pyzpre.delicaciesdelights.effect.ServerTickHandler;
 import com.pyzpre.delicaciesdelights.index.*;
 import com.pyzpre.delicaciesdelights.network.NetworkSetup;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -13,6 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +44,12 @@ public class DelicaciesDelights {
         RecipeRegistry.RECIPE_SERIALIZERS.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(ServerTickHandler.class);
+
+        // Register client tick handler only if on the client side
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            MinecraftForge.EVENT_BUS.register(ClientTickHandler.class);
+        }
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
