@@ -10,16 +10,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(Dist.CLIENT)
 public class ClientTickHandler {
-    private static final Logger LOGGER = LogManager.getLogger();
     private static final double MAX_SPEED = 1.0; // 10 blocks per second
     private static final double BOOST_FORCE = 0.1; // Force applied per tick
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
@@ -28,15 +25,15 @@ public class ClientTickHandler {
 
             // Ensure this is the client-side player
             if (mc.player == player && player.isAlive() && player instanceof LocalPlayer) {
-                // Handle client-specific logic here, such as notifying the server of the jump key press
+                // Apply boost logic only if needed
                 applyBoostIfNeeded((LocalPlayer) player);
             }
         }
     }
 
     private static void applyBoostIfNeeded(LocalPlayer player) {
-        // Check if the player has the Echoveil effect
-        if (player.hasEffect(EffectRegistry.ECHOVEIL.get())) {
+        // Check if the player has the Echoveil effect and is fall flying
+        if (player.hasEffect(EffectRegistry.ECHOVEIL.get()) && player.isFallFlying()) {
             Vec3 lookVec = player.getLookAngle();
             Vec3 movementVec = new Vec3(lookVec.x, 0, lookVec.z).normalize();
 
@@ -46,6 +43,7 @@ public class ClientTickHandler {
                 double currentSpeed = Math.sqrt(player.getDeltaMovement().x * player.getDeltaMovement().x +
                         player.getDeltaMovement().z * player.getDeltaMovement().z);
 
+                // Only apply boost if the current speed is below the maximum allowed speed
                 if (currentSpeed < MAX_SPEED) {
                     // Apply a force in the direction the player is looking
                     player.push(movementVec.x * BOOST_FORCE, 0, movementVec.z * BOOST_FORCE);
@@ -53,6 +51,4 @@ public class ClientTickHandler {
             }
         }
     }
-
-
 }

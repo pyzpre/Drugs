@@ -47,18 +47,5 @@ public class NetworkSetup {
                 .decoder(DebuffTagPacket::decode)
                 .consumerMainThread(DebuffTagPacket::handle)
                 .add();
-
-        CHANNEL.messageBuilder(ClientboundPlayerAbilitiesPacket.class, id++)
-                .encoder(ClientboundPlayerAbilitiesPacket::toBytes)
-                .decoder(ClientboundPlayerAbilitiesPacket::new)
-                .consumerMainThread(ClientboundPlayerAbilitiesPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(ServerboundPlayerFallFlyingPacket.class, id++)
-                .encoder(ServerboundPlayerFallFlyingPacket::toBytes)
-                .decoder(ServerboundPlayerFallFlyingPacket::new)
-                .consumerMainThread(ServerboundPlayerFallFlyingPacket::handle)
-                .add();
-
     }
 }
