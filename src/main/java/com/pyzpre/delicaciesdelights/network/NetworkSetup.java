@@ -10,7 +10,7 @@ public class NetworkSetup {
     private static final Logger LOGGER = LoggerFactory.getLogger(NetworkSetup.class);
     private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation("delicaciesdelights", "main"),
+            new ResourceLocation("delicacies_delights", "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
@@ -59,5 +59,6 @@ public class NetworkSetup {
                 .decoder(ServerboundPlayerFallFlyingPacket::new)
                 .consumerMainThread(ServerboundPlayerFallFlyingPacket::handle)
                 .add();
+
     }
 }
