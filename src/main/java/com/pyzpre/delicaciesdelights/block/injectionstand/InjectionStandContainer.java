@@ -2,6 +2,7 @@ package com.pyzpre.delicaciesdelights.block.injectionstand;
 
 import com.pyzpre.delicaciesdelights.index.BlockRegistry;
 import com.pyzpre.delicaciesdelights.index.ContainerRegistry;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -13,29 +14,56 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.common.util.LazyOptional;
 
-
 public class InjectionStandContainer extends AbstractContainerMenu {
     private final InjectionStandEntity blockEntity;
     private final ContainerLevelAccess containerLevelAccess;
-    private final ContainerData data;
+    public final ContainerData data;
 
+    // Server-side constructor
     public InjectionStandContainer(int id, Inventory playerInventory, InjectionStandEntity blockEntity, ContainerData data) {
         super(ContainerRegistry.INJECTION_STAND.get(), id);
         this.blockEntity = blockEntity;
         this.containerLevelAccess = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
         this.data = data;
 
+        // Initialize container slots
+        addSlots(playerInventory);
+
+        // Add the ContainerData object to the container to sync it
+        addDataSlots(data); // Sync data values (ensure data has a length of 3)
+    }
+
+    // Client-side constructor
+    public InjectionStandContainer(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+        super(ContainerRegistry.INJECTION_STAND.get(), id);
+        this.blockEntity = (InjectionStandEntity) playerInventory.player.level().getBlockEntity(extraData.readBlockPos());
+        this.containerLevelAccess = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
+        this.data = new SimpleContainerData(3); // Initialize data with the correct size
+
+        // Initialize container slots
+        addSlots(playerInventory);
+
+        // Add the ContainerData object to the container to sync it
+        addDataSlots(data); // Sync data values
+    }
+    public int getCraftingProgress() {
+        return this.data.get(0); // Index 0 corresponds to processTime
+    }
+
+    public int getTotalCraftingTime() {
+        return this.data.get(1); // Index 1 corresponds to PROCESS_TIME_TOTAL
+    }
+
+
+    // Method to initialize all slots
+    private void addSlots(Inventory playerInventory) {
         LazyOptional<IItemHandler> itemHandlerOptional = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER);
         IItemHandler itemHandler = itemHandlerOptional.orElseThrow(RuntimeException::new);
 
-        // Ingredient slot (ingredient1, potion)
-        this.addSlot(new SlotItemHandler(itemHandler, 0, 44, 17));
-
-        // Ingredient slot (ingredient2, edible)
-        this.addSlot(new SlotItemHandler(itemHandler, 1, 80, 58));
-
-        // Result slot using the custom ResultSlot class
-
+        // Add custom slots for the block entity
+        this.addSlot(new SlotItemHandler(itemHandler, 0, 44, 17)); // Ingredient slot 1
+        this.addSlot(new SlotItemHandler(itemHandler, 1, 80, 58)); // Ingredient slot 2
+        this.addSlot(new SlotItemHandler(itemHandler, 2, 116, 17)); // Blaze powder slot
 
         // Player Inventory Slots
         for (int i = 0; i < 3; ++i) {
@@ -44,39 +72,19 @@ public class InjectionStandContainer extends AbstractContainerMenu {
             }
         }
 
+        // Player Hotbar Slots
         for (int k = 0; k < 9; ++k) {
             this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 142));
         }
-
-        addDataSlots(data);
     }
 
-    private static class ResultSlot extends SlotItemHandler {
-        private final InjectionStandEntity blockEntity;
-
-        public ResultSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition, InjectionStandEntity blockEntity) {
-            super(itemHandler, index, xPosition, yPosition);
-            this.blockEntity = blockEntity;
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            // Prevents placing items in the result slot
-            return false;
-        }
-
-        @Override
-        public boolean mayPickup(Player player) {
-            // Allows pickup only if there is a valid result in the INGREDIENT2_SLOT
-            return !blockEntity.getItem(InjectionStandEntity.INGREDIENT2_SLOT).isEmpty();
-        }
-
-    }
+    // Check if the container is still valid
     @Override
     public boolean stillValid(Player player) {
         return stillValid(this.containerLevelAccess, player, BlockRegistry.INJECTION_STAND.get());
     }
 
+    // Handle shift-clicking behavior for quick move stack
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -102,12 +110,12 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         return itemstack;
     }
 
-
+    // Check if crafting is in progress
     public boolean isCrafting() {
         return this.data.get(0) > 0;
     }
 
-
+    // Get scaled progress for the progress bar
     public int getScaledProgress() {
         int progress = this.data.get(0);
         int maxProgress = this.data.get(1);
@@ -115,12 +123,31 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
     }
 
+    // Get the potion color in the first ingredient slot
     public int getPotionColor() {
         ItemStack stack = this.blockEntity.getItem(0); // Adjust to the correct slot index
         if (stack.is(Items.POTION)) {
             int color = PotionUtils.getColor(stack);
             return color;
         }
-        return 0xffffff;
+        return 0xffffff; // Default color
+    }
+
+    // Check if blaze powder is present
+    public boolean hasBlazePowder() {
+        ItemStack stack = this.blockEntity.getItem(2);
+        return stack.is(Items.BLAZE_POWDER);
+    }
+
+    // Get the scaled fill level of the bubble based on blaze powder (0 to 100)
+    public int getBubbleFillLevel() {
+        // Assume full fill for 1 item, adjust logic based on exact needs
+        ItemStack stack = this.blockEntity.getItem(2);
+        return stack.getCount() * 10; // Scale factor, adjust as needed
+    }
+
+    // Get the block entity associated with this container
+    public InjectionStandEntity getBlockEntity() {
+        return blockEntity;
     }
 }

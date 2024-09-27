@@ -20,6 +20,14 @@ public class ContainerRegistry {
             () -> IForgeMenuType.create((windowId, inv, data) -> {
                 BlockPos pos = data.readBlockPos();
                 InjectionStandEntity blockEntity = (InjectionStandEntity) inv.player.level().getBlockEntity(pos);
-                return new InjectionStandContainer(windowId, inv, blockEntity, new SimpleContainerData(2));
+
+                // Handle the case where the block entity is not found
+                if (blockEntity == null) {
+                    throw new IllegalStateException("InjectionStandEntity not found at position: " + pos);
+                }
+
+                // Use correct data length, which should match the server's `ContainerData` length.
+                return new InjectionStandContainer(windowId, inv, blockEntity, new SimpleContainerData(3));
             }));
 }
+
