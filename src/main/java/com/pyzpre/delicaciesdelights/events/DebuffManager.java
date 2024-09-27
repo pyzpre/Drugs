@@ -27,6 +27,7 @@ public class DebuffManager {
         DEBUFF_MAP.put("Sickness", List.of(MobEffects.CONFUSION, MobEffects.POISON));
         DEBUFF_MAP.put("Blackout", List.of(MobEffects.BLINDNESS, MobEffects.CONFUSION));
         DEBUFF_MAP.put("Schizophrenic", List.of(EffectRegistry.CRAZY.get()));
+        DEBUFF_MAP.put("Echo", List.of(EffectRegistry.ECHOVEIL.get()));
     }
 
     public static List<MobEffect> getDebuff(String tag) {

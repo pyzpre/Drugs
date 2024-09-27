@@ -29,7 +29,13 @@ public class InjectionRecipe implements Recipe<InjectionStandEntity> {
 
     @Override
     public ItemStack assemble(InjectionStandEntity inv, RegistryAccess registryAccess) {
-        return result.copy();
+        return assembleWithCount(inv, registryAccess, 1); // Default to 1 if no count is provided
+    }
+
+    public ItemStack assembleWithCount(InjectionStandEntity inv, RegistryAccess registryAccess, int count) {
+        ItemStack resultStack = result.copy();
+        resultStack.setCount(result.getCount() * count);
+        return resultStack;
     }
 
     @Override

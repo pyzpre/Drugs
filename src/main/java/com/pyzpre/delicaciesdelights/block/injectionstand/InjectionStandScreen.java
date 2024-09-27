@@ -8,7 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 public class InjectionStandScreen extends AbstractContainerScreen<InjectionStandContainer> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("textures/gui/container/blast_furnace.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation("delicacies_delights:textures/gui/container/injection_stand.png");
+
 
     public InjectionStandScreen(InjectionStandContainer container, Inventory inv, Component title) {
         super(container, inv, title);

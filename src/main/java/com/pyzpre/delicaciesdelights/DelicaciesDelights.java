@@ -49,10 +49,13 @@ public class DelicaciesDelights {
         // Register client tick handler only if on the client side
         if (FMLEnvironment.dist == Dist.CLIENT) {
             MinecraftForge.EVENT_BUS.register(ClientTickHandler.class);
+            MinecraftForge.EVENT_BUS.register(com.pyzpre.delicaciesdelights.ClientSetup.class); // Register ClientSetup
         }
+
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
+
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

@@ -13,6 +13,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.common.util.LazyOptional;
 
+
 public class InjectionStandContainer extends AbstractContainerMenu {
     private final InjectionStandEntity blockEntity;
     private final ContainerLevelAccess containerLevelAccess;
@@ -27,19 +28,16 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         LazyOptional<IItemHandler> itemHandlerOptional = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER);
         IItemHandler itemHandler = itemHandlerOptional.orElseThrow(RuntimeException::new);
 
-        // Potion slot
-        this.addSlot(new SlotItemHandler(itemHandler, 0, 56, 17));
-        // Ingredient slot
-        this.addSlot(new SlotItemHandler(itemHandler, 1, 56, 53));
-        // Result slot
-        this.addSlot(new SlotItemHandler(itemHandler, 2, 116, 35) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false; // Prevents inserting items into the result slot
-            }
-        });
+        // Ingredient slot (ingredient1, potion)
+        this.addSlot(new SlotItemHandler(itemHandler, 0, 44, 17));
 
-        // Player Inventory
+        // Ingredient slot (ingredient2, edible)
+        this.addSlot(new SlotItemHandler(itemHandler, 1, 80, 58));
+
+        // Result slot using the custom ResultSlot class
+
+
+        // Player Inventory Slots
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
                 this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
@@ -53,6 +51,27 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
+    private static class ResultSlot extends SlotItemHandler {
+        private final InjectionStandEntity blockEntity;
+
+        public ResultSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition, InjectionStandEntity blockEntity) {
+            super(itemHandler, index, xPosition, yPosition);
+            this.blockEntity = blockEntity;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            // Prevents placing items in the result slot
+            return false;
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            // Allows pickup only if there is a valid result in the INGREDIENT2_SLOT
+            return !blockEntity.getItem(InjectionStandEntity.INGREDIENT2_SLOT).isEmpty();
+        }
+
+    }
     @Override
     public boolean stillValid(Player player) {
         return stillValid(this.containerLevelAccess, player, BlockRegistry.INJECTION_STAND.get());

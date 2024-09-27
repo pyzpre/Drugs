@@ -2,6 +2,7 @@ package com.pyzpre.delicaciesdelights.item;
 
 import com.pyzpre.delicaciesdelights.events.DebuffManager;
 import com.pyzpre.delicaciesdelights.events.OverlayManager;
+import com.pyzpre.delicaciesdelights.index.EffectRegistry;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,7 +26,7 @@ public class ConceptItem2 extends Item {
 
         if (entity instanceof Player player) {
             if (!world.isClientSide) {
-                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200);
+                MobEffectInstance effectInstance = new MobEffectInstance(EffectRegistry.ECHOVEIL.get(), 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "SomeOtherOverlay", true, false);
                 DebuffManager.updateDebuffTag(player, "Schizophrenic", true, false);

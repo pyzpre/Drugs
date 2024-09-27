@@ -26,7 +26,7 @@ public class OverlayManager {
 
     static {
         OVERLAY_MAP.put("Unanchored", List.of(
-                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/snow"), 0.0001f, 0f, true, 4.0f, 100, false)
+                new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/vines"), 0.0001f, 0f, false, 0f, 240, false)
         ));
         OVERLAY_MAP.put("SomeOtherOverlay", List.of(
                 new OverlayMetadata(new ResourceLocation(DelicaciesDelights.MODID, "textures/misc/counting"), 0.0001f, 1f, false, 1.0f, 1000, true)

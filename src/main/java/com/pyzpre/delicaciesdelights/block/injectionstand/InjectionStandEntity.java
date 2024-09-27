@@ -27,18 +27,25 @@ import java.util.Optional;
 
 public class InjectionStandEntity extends BlockEntity implements Container, MenuProvider {
     private static final int INGREDIENT1_SLOT = 0;
-    private static final int INGREDIENT2_SLOT = 1;
-    private static final int RESULT_SLOT = 2;
-
-    private final NonNullList<ItemStack> items = NonNullList.withSize(3, ItemStack.EMPTY);
+    public static final int INGREDIENT2_SLOT = 1;
+    private final NonNullList<ItemStack> items = NonNullList.withSize(2, ItemStack.EMPTY);
     private int processTime;
     private static final int PROCESS_TIME_TOTAL = 100;  // Example value, adjust as needed
-    private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
+    private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
         }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            if (slot == INGREDIENT1_SLOT || slot == INGREDIENT2_SLOT) {
+                return 8; // Limit to 8 items in each ingredient slot
+            }
+            return super.getSlotLimit(slot);
+        }
     };
+
     private final LazyOptional<IItemHandler> handlers = LazyOptional.of(() -> itemHandler);
     private final ContainerData dataAccess;
 
@@ -91,35 +98,45 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
 
         Optional<InjectionRecipe> match = level.getRecipeManager().getRecipeFor(InjectionRecipeType.INSTANCE, this, level);
         if (match.isPresent()) {
-            ItemStack resultItem = match.get().getResultItem(level.registryAccess());
-            boolean canInsert = canInsertItemIntoOutputSlot(resultItem);
-            return canInsert;
+            return true; // Always return true if there's a matching recipe
         } else {
             return false;
         }
     }
 
+
+
     private void craftItem() {
         Level level = this.level;
         if (level == null) return;
+
         Optional<InjectionRecipe> match = level.getRecipeManager().getRecipeFor(InjectionRecipeType.INSTANCE, this, level);
         if (match.isPresent()) {
-            ItemStack result = match.get().assemble(this, level.registryAccess());
-            itemHandler.extractItem(INGREDIENT1_SLOT, 1, false);
-            itemHandler.extractItem(INGREDIENT2_SLOT, 1, false);
-            if (itemHandler.getStackInSlot(RESULT_SLOT).isEmpty()) {
-                itemHandler.setStackInSlot(RESULT_SLOT, result);
-            } else {
-                itemHandler.getStackInSlot(RESULT_SLOT).grow(result.getCount());
+            InjectionRecipe recipe = match.get();
+
+            // Get the number of items in the ingredient slots
+            int ingredient1Count = itemHandler.getStackInSlot(INGREDIENT1_SLOT).getCount();
+            int ingredient2Count = itemHandler.getStackInSlot(INGREDIENT2_SLOT).getCount();
+
+            // Determine how many items to process, capped at 8
+            int processCount = Math.min(8, ingredient2Count);
+
+            // Ensure that processCount is greater than 0 before proceeding
+            if (processCount > 0) {
+                // Get the result for the given count of ingredients
+                ItemStack resultStack = recipe.assembleWithCount(this, level.registryAccess(), processCount);
+
+                // Debugging: Print the result count to verify it's calculated correctly
+                System.out.println("Result Stack Count: " + resultStack.getCount());
+
+                // Remove the ingredients
+                itemHandler.extractItem(INGREDIENT1_SLOT, processCount, false);
+
+                // Overwrite INGREDIENT2_SLOT with the result, multiplying the result by the process count
+                itemHandler.setStackInSlot(INGREDIENT2_SLOT, resultStack);
             }
         }
     }
-
-    private boolean canInsertItemIntoOutputSlot(ItemStack stack) {
-        boolean canInsert = itemHandler.getStackInSlot(RESULT_SLOT).isEmpty() || (itemHandler.getStackInSlot(RESULT_SLOT).getItem() == stack.getItem() && itemHandler.getStackInSlot(RESULT_SLOT).getCount() + stack.getCount() <= itemHandler.getStackInSlot(RESULT_SLOT).getMaxStackSize());
-        return canInsert;
-    }
-
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);

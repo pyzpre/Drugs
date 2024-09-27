@@ -164,8 +164,6 @@ public class OverlayRenderer {
 
                 if (tag != null) {
                     OverlayManager.updateOverlayTag(player, tag, false, false);
-                } else {
-                    LOGGER.warn("No associated tag found for the current overlay.");
                 }
 
                 clearCurrentOverlay();
@@ -240,15 +238,9 @@ public class OverlayRenderer {
                         List<OverlayMetadata> overlays = OverlayManager.getOverlays(tag);
                         if (!overlays.isEmpty()) {
                             OverlayRenderer.addOverlaysToRender(overlays);
-                        } else {
-                            LOGGER.warn("No overlays found for tag '{}' in the manager.", tag);
                         }
-                    } else {
-                        LOGGER.warn("No overlay tag found for player '{}'", player.getName().getString());
                     }
                 }
-            } else {
-                LOGGER.warn("Player was null when processing OverlaySyncPacket.");
             }
         });
         ctx.get().setPacketHandled(true);
@@ -264,11 +256,7 @@ public class OverlayRenderer {
                 List<OverlayMetadata> metadataList = OverlayManager.getOverlays(tag);
                 if (!metadataList.isEmpty()) {
                     addOverlaysToRender(metadataList);
-                } else {
-                    LOGGER.warn("No metadata found for tag '{}'.", tag);
                 }
-            } else {
-                LOGGER.warn("No overlay tag found for syncing overlays.");
             }
         }
     }
@@ -284,8 +272,6 @@ public class OverlayRenderer {
                     resourceLocations.addAll(metadata.getFrames());
                 }
                 NetworkSetup.getChannel().send(PacketDistributor.SERVER.noArg(), new RequestOverlayResourcesPacket(resourceLocations));
-            } else {
-                LOGGER.warn("Player was null when processing RequestOverlayResourcesPacket.");
             }
         });
         ctx.get().setPacketHandled(true);
