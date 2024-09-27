@@ -150,4 +150,12 @@ public class InjectionStandContainer extends AbstractContainerMenu {
     public InjectionStandEntity getBlockEntity() {
         return blockEntity;
     }
+    public boolean getBlazePowderConsumed() {
+        return this.data.get(3) == 1;
+    }
+
+    public boolean isPowered() {
+        return this.data.get(2) == 1;
+    }
+
 }

@@ -5,7 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -38,8 +40,8 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
     private final NonNullList<ItemStack> items = NonNullList.withSize(3, ItemStack.EMPTY);
     private int processTime;
     private static final int PROCESS_TIME_TOTAL = 100;  // Example value, adjust as needed
-    private boolean powered = false; // Track if the stand is powered
-    private boolean blazePowderConsumed = false; // Track if blaze powder has been consumed
+    public boolean powered = false; // Track if the stand is powered
+    public boolean blazePowderConsumed = false; // Track if blaze powder has been consumed
     public boolean blazePowderAdded = false; // New flag to indicate blaze powder was added
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
@@ -80,6 +82,8 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, InjectionStandEntity blockEntity) {
+        LOGGER.info("Tick Update - Powered: {}, BlazePowderConsumed: {}, BlazePowderAdded: {}",
+                blockEntity.powered, blockEntity.blazePowderConsumed, blockEntity.blazePowderAdded);
         if (blockEntity.isPowered()) {
             // Consume blaze powder if it hasn't been consumed yet
             if (blockEntity.blazePowderAdded && !blockEntity.blazePowderConsumed) {
@@ -88,12 +92,11 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
                     blazeStack.shrink(1); // Consume one blaze powder
                     blockEntity.blazePowderConsumed = true;
                     blockEntity.blazePowderAdded = false; // Reset the flag
+                    // Logger to print blaze powder consumption details
                     blockEntity.setChanged();
-
                 } else {
                     // No blaze powder to consume, power off
                     blockEntity.setPowered(false);
-
                 }
             }
 
@@ -126,8 +129,26 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
             blazePowderConsumed = true;
             blazePowderAdded = false; // Reset the flag
             setPowered(true); // Power on the stand
-            setChanged(); // Mark as changed for saving
 
+            // Notify the client of the change
+            setChanged();
+            if (this.level != null) {
+                this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+            }
+        }
+    }
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        CompoundTag tag = new CompoundTag();
+        this.saveAdditional(tag);
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            this.handleUpdateTag(tag);
         }
     }
 
@@ -185,13 +206,17 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
             blazePowderAdded = false;    // Reset the addition flag
         }
 
-
         // Check for blaze powder if powered off to re-power on automatically
         if (!powered && !itemHandler.getStackInSlot(BLAZE_POWDER_SLOT).isEmpty()) {
             consumeBlazePowder(); // Re-consume blaze powder and power on
         }
-    }
 
+        // Notify the client of the change
+        setChanged();
+        if (this.level != null) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
+    }
     public boolean isPowered() {
         return powered;
     }
@@ -199,20 +224,21 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        ContainerHelper.loadAllItems(tag, this.items);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
         this.processTime = tag.getInt("ProcessTime");
         this.powered = tag.getBoolean("Powered");
+        this.blazePowderConsumed = tag.getBoolean("BlazePowderConsumed");
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        ContainerHelper.saveAllItems(tag, this.items);
         tag.put("Inventory", itemHandler.serializeNBT());
         tag.putInt("ProcessTime", this.processTime);
         tag.putBoolean("Powered", this.powered);
+        tag.putBoolean("BlazePowderConsumed", this.blazePowderConsumed);
     }
+
 
     @Override
     public Component getDisplayName() {
@@ -228,6 +254,8 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
                     return PROCESS_TIME_TOTAL;
                 case 2:
                     return InjectionStandEntity.this.isPowered() ? 1 : 0; // Check powered state
+                case 3:
+                    return InjectionStandEntity.this.blazePowderConsumed ? 1 : 0; // Return blazePowderConsumed state
                 default:
                     return 0;
             }
@@ -239,14 +267,18 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
                 InjectionStandEntity.this.processTime = value;
             } else if (index == 2) {
                 InjectionStandEntity.this.setPowered(value == 1);
+            } else if (index == 3) {
+                InjectionStandEntity.this.blazePowderConsumed = value == 1;
             }
         }
 
         @Override
         public int getCount() {
-            return 3; // Update to 3 to match the number of data values
+            return 4; // Updated to 4 to match the number of data values (indices 0 to 3)
         }
     };
+
+
 
 
     @Nullable
@@ -327,6 +359,19 @@ public class InjectionStandEntity extends BlockEntity implements Container, Menu
         super.invalidateCaps();
         handlers.invalidate();
     }
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        this.load(tag);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        this.saveAdditional(tag);
+        return tag;
+    }
+
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(items.size());

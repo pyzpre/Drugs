@@ -147,7 +147,7 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
 
 
         // Render individual pixels only if blaze powder has been added
-        if (isBlazePowderAdded()) {
+        if (isBlazePowderConsumed()) {
             drawPixels(guiGraphics, x, y);
         }
 
@@ -168,15 +168,19 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
             // Get current crafting progress
             int craftingProgress = this.menu.getCraftingProgress();
 
+
             // Remove 1 bubble every 5 ticks
-            int bubblesToRemove = (int)(craftingProgress / 5);
+            int bubblesToRemove = (int) (craftingProgress / 5);
+
 
             // Loop over totalBubbles + 1 to ensure all bubbles can be removed
             bubblesToRemove = bubblesToRemove % (totalBubbles + 1);
 
+
             // Render the visible bubbles, skipping the first 'bubblesToRemove' bubbles
             for (int i = bubblesToRemove; i < totalBubbles; i++) {
                 List<Pixel> bubble = bubbleData.get(i);
+
                 for (Pixel pixel : bubble) {
                     int r = (pixel.color >> 16) & 255;
                     int g = (pixel.color >> 8) & 255;
@@ -184,10 +188,12 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
                     drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, r, g, b);
                 }
             }
-        }  else {
+        } else {
             // Not crafting, render bubbles only if blaze powder is added
-            if (isBlazePowderAdded()) {
-                for (List<Pixel> bubble : bubbleData) {
+            if (isBlazePowderConsumed() && isPowered()) {
+                for (int bubbleIndex = 0; bubbleIndex < bubbleData.size(); bubbleIndex++) {
+                    List<Pixel> bubble = bubbleData.get(bubbleIndex);
+
                     for (Pixel pixel : bubble) {
                         int r = (pixel.color >> 16) & 255;
                         int g = (pixel.color >> 8) & 255;
@@ -200,6 +206,7 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
     }
 
 
+
     private void drawPixel(GuiGraphics guiGraphics, int x, int y, int r, int g, int b) {
 
         RenderSystem.setShaderColor(r / 255.0F, g / 255.0F, b / 255.0F, 1.0F);
@@ -207,10 +214,12 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Reset the shader color to default white
     }
 
-    private boolean isBlazePowderAdded() {
-        boolean blazePowderAdded = blockEntity.blazePowderAdded; // Assuming blockEntity has blazePowderAdded field
+    private boolean isBlazePowderConsumed() {
+        return this.menu.getBlazePowderConsumed();
+    }
 
-        return blazePowderAdded;
+    private boolean isPowered() {
+        return this.menu.isPowered();
     }
 
     @Override

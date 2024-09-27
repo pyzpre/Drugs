@@ -27,7 +27,7 @@ public class ContainerRegistry {
                 }
 
                 // Use correct data length, which should match the server's `ContainerData` length.
-                return new InjectionStandContainer(windowId, inv, blockEntity, new SimpleContainerData(3));
+                return new InjectionStandContainer(windowId, inv, blockEntity, new SimpleContainerData(4));
             }));
 }
 
