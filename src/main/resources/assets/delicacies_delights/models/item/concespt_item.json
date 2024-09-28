@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "delicacies_delights:item/chorus"
+    "layer0": "delicacies_delights:item/concept_item"
   }
 }

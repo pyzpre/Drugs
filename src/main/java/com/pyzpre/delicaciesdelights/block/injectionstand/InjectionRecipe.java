@@ -24,8 +24,10 @@ public class InjectionRecipe implements Recipe<InjectionStandEntity> {
 
     @Override
     public boolean matches(InjectionStandEntity inv, Level level) {
-        return ingredient1.test(inv.getItem(0)) && ingredient2.test(inv.getItem(1));
+        return ingredient1.test(inv.getStoredPotion()) && ingredient2.test(inv.getItem(1));
     }
+
+
 
     @Override
     public ItemStack assemble(InjectionStandEntity inv, RegistryAccess registryAccess) {

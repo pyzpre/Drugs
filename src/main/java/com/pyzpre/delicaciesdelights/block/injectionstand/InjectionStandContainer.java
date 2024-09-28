@@ -8,11 +8,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.common.util.LazyOptional;
+
 
 public class InjectionStandContainer extends AbstractContainerMenu {
     private final InjectionStandEntity blockEntity;
@@ -38,7 +38,7 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         super(ContainerRegistry.INJECTION_STAND.get(), id);
         this.blockEntity = (InjectionStandEntity) playerInventory.player.level().getBlockEntity(extraData.readBlockPos());
         this.containerLevelAccess = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
-        this.data = new SimpleContainerData(3); // Initialize data with the correct size
+        this.data = new SimpleContainerData(5); // Updated length to match server-side dataAccess
 
         // Initialize container slots
         addSlots(playerInventory);
@@ -46,6 +46,7 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         // Add the ContainerData object to the container to sync it
         addDataSlots(data); // Sync data values
     }
+
     public int getCraftingProgress() {
         return this.data.get(0); // Index 0 corresponds to processTime
     }
@@ -65,6 +66,9 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         this.addSlot(new SlotItemHandler(itemHandler, 1, 80, 58)); // Ingredient slot 2
         this.addSlot(new SlotItemHandler(itemHandler, 2, 116, 17)); // Blaze powder slot
 
+
+
+
         // Player Inventory Slots
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
@@ -77,6 +81,7 @@ public class InjectionStandContainer extends AbstractContainerMenu {
             this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 142));
         }
     }
+
 
     // Check if the container is still valid
     @Override
@@ -92,12 +97,24 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         if (slot != null && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             itemstack = itemstack1.copy();
-            if (index < 3) {
+            if (index < 3) { // Adjusted for 3 container slots
                 if (!this.moveItemStackTo(itemstack1, 3, 39, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.moveItemStackTo(itemstack1, 0, 3, false)) {
-                return ItemStack.EMPTY;
+            } else {
+                if (itemstack1.is(Items.POTION)) {
+                    if (!this.moveItemStackTo(itemstack1, 0, 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (itemstack1.is(Items.BLAZE_POWDER)) {
+                    if (!this.moveItemStackTo(itemstack1, 2, 3, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else {
+                    if (!this.moveItemStackTo(itemstack1, 1, 2, false)) { // Adjusted indices
+                        return ItemStack.EMPTY;
+                    }
+                }
             }
 
             if (itemstack1.isEmpty()) {
@@ -105,10 +122,17 @@ public class InjectionStandContainer extends AbstractContainerMenu {
             } else {
                 slot.setChanged();
             }
+
+            if (itemstack1.getCount() == itemstack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+
+            slot.onTake(playerIn, itemstack1);
         }
 
         return itemstack;
     }
+
 
     // Check if crafting is in progress
     public boolean isCrafting() {
@@ -123,15 +147,11 @@ public class InjectionStandContainer extends AbstractContainerMenu {
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
     }
 
-    // Get the potion color in the first ingredient slot
+    // Get the potion color from ContainerData
     public int getPotionColor() {
-        ItemStack stack = this.blockEntity.getItem(0); // Adjust to the correct slot index
-        if (stack.is(Items.POTION)) {
-            int color = PotionUtils.getColor(stack);
-            return color;
-        }
-        return 0xffffff; // Default color
+        return this.data.get(4); // Index 4 corresponds to potionColor
     }
+
 
     // Check if blaze powder is present
     public boolean hasBlazePowder() {

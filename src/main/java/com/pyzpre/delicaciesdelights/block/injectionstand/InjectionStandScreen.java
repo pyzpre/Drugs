@@ -33,6 +33,8 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
 
     // List to hold all pixel data
     private final List<List<Pixel>> bubbleData = new ArrayList<>();
+    private final List<List<Pixel>> poolData = new ArrayList<>();
+
     private final InjectionStandEntity blockEntity;
 
     public InjectionStandScreen(InjectionStandContainer container, Inventory inv, Component title) {
@@ -135,6 +137,86 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
         bubble8.add(new Pixel(88, 43, 0x953300));
         bubble8.add(new Pixel(89, 43, 0x953300));
         bubbleData.add(bubble8);
+        //Pool 1
+        List<Pixel> pool1 = new ArrayList<>();
+        pool1.add(new Pixel(80, 46, 0));
+        pool1.add(new Pixel(81, 46, 0));
+        pool1.add(new Pixel(82, 46, 0));
+        pool1.add(new Pixel(83, 46, 0));
+        pool1.add(new Pixel(84, 46, 0));
+        pool1.add(new Pixel(85, 46, 0));
+        pool1.add(new Pixel(86, 46, 0));
+        pool1.add(new Pixel(87, 46, 0));
+        pool1.add(new Pixel(88, 46, 0));
+        pool1.add(new Pixel(89, 46, 0));
+        pool1.add(new Pixel(90, 46, 0));
+        pool1.add(new Pixel(91, 46, 0));
+        pool1.add(new Pixel(92, 46, 0));
+        pool1.add(new Pixel(93, 46, 0));
+        pool1.add(new Pixel(94, 46, 0));
+        pool1.add(new Pixel(95, 46, 0));
+        poolData.add(pool1);
+        //Pool2
+        List<Pixel> pool2 = new ArrayList<>();
+        pool2.add(new Pixel(79, 47, 0));
+        pool2.add(new Pixel(80, 47, 0));
+        pool2.add(new Pixel(81, 47, 0));
+        pool2.add(new Pixel(82, 47, 0));
+        pool2.add(new Pixel(83, 47, 0));
+        pool2.add(new Pixel(84, 47, 0));
+        pool2.add(new Pixel(85, 47, 0));
+        pool2.add(new Pixel(86, 47, 0));
+        pool2.add(new Pixel(87, 47, 0));
+        pool2.add(new Pixel(88, 47, 0));
+        pool2.add(new Pixel(89, 47, 0));
+        pool2.add(new Pixel(90, 47, 0));
+        pool2.add(new Pixel(91, 47, 0));
+        pool2.add(new Pixel(92, 47, 0));
+        pool2.add(new Pixel(93, 47, 0));
+        pool2.add(new Pixel(94, 47, 0));
+        pool2.add(new Pixel(95, 47, 0));
+        pool2.add(new Pixel(96, 47, 0));
+        poolData.add(pool2);
+        //Pool3
+        List<Pixel> pool3 = new ArrayList<>();
+        pool3.add(new Pixel(79, 48, 0));
+        pool3.add(new Pixel(80, 48, 0));
+        pool3.add(new Pixel(81, 48, 0));
+        pool3.add(new Pixel(82, 48, 0));
+        pool3.add(new Pixel(83, 48, 0));
+        pool3.add(new Pixel(84, 48, 0));
+        pool3.add(new Pixel(85, 48, 0));
+        pool3.add(new Pixel(86, 48, 0));
+        pool3.add(new Pixel(87, 48, 0));
+        pool3.add(new Pixel(88, 48, 0));
+        pool3.add(new Pixel(89, 48, 0));
+        pool3.add(new Pixel(90, 48, 0));
+        pool3.add(new Pixel(91, 48, 0));
+        pool3.add(new Pixel(92, 48, 0));
+        pool3.add(new Pixel(93, 48, 0));
+        pool3.add(new Pixel(94, 48, 0));
+        pool3.add(new Pixel(95, 48, 0));
+        pool3.add(new Pixel(96, 48, 0));
+        poolData.add(pool3);
+        //Pool4
+        List<Pixel> pool4 = new ArrayList<>();
+        pool4.add(new Pixel(80, 49, 0));
+        pool4.add(new Pixel(81, 49, 0));
+        pool4.add(new Pixel(82, 49, 0));
+        pool4.add(new Pixel(83, 49, 0));
+        pool4.add(new Pixel(84, 49, 0));
+        pool4.add(new Pixel(85, 49, 0));
+        pool4.add(new Pixel(86, 49, 0));
+        pool4.add(new Pixel(87, 49, 0));
+        pool4.add(new Pixel(88, 49, 0));
+        pool4.add(new Pixel(89, 49, 0));
+        pool4.add(new Pixel(90, 49, 0));
+        pool4.add(new Pixel(91, 49, 0));
+        pool4.add(new Pixel(92, 49, 0));
+        pool4.add(new Pixel(93, 49, 0));
+        pool4.add(new Pixel(94, 49, 0));
+        pool4.add(new Pixel(95, 49, 0));
+        poolData.add(pool4);
     }
 
     @Override
@@ -145,11 +227,8 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
         int y = (this.height - this.imageHeight) / 2;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
-
-        // Render individual pixels only if blaze powder has been added
-        if (isBlazePowderConsumed()) {
-            drawPixels(guiGraphics, x, y);
-        }
+        // Always call drawPixels
+        drawPixels(guiGraphics, x, y);
 
         if (this.menu.isCrafting()) {
             int progress = this.menu.getScaledProgress();
@@ -161,49 +240,86 @@ public class InjectionStandScreen extends AbstractContainerScreen<InjectionStand
         }
     }
 
+
+
     private void drawPixels(GuiGraphics guiGraphics, int offsetX, int offsetY) {
         int totalBubbles = bubbleData.size();
+        int totalPools = poolData.size();
 
+        int potionColor = this.menu.getPotionColor();
+        boolean hasStoredPotion = potionColor != 0xFFFFFF; // Assuming 0xFFFFFF indicates no potion
+
+        int r = (potionColor >> 16) & 255;
+        int g = (potionColor >> 8) & 255;
+        int b = potionColor & 255;
+
+
+        // Render bubbles based on crafting state or powered state
         if (this.menu.isCrafting()) {
-            // Get current crafting progress
             int craftingProgress = this.menu.getCraftingProgress();
 
-
-            // Remove 1 bubble every 5 ticks
-            int bubblesToRemove = (int) (craftingProgress / 5);
-
-
-            // Loop over totalBubbles + 1 to ensure all bubbles can be removed
-            bubblesToRemove = bubblesToRemove % (totalBubbles + 1);
-
+            int bubbleTickRate = 5; // Adjust as needed
+            int bubblesToRemove = (craftingProgress / bubbleTickRate) % (totalBubbles + 1);
 
             // Render the visible bubbles, skipping the first 'bubblesToRemove' bubbles
             for (int i = bubblesToRemove; i < totalBubbles; i++) {
                 List<Pixel> bubble = bubbleData.get(i);
-
                 for (Pixel pixel : bubble) {
-                    int r = (pixel.color >> 16) & 255;
-                    int g = (pixel.color >> 8) & 255;
-                    int b = pixel.color & 255;
+                    int br = (pixel.color >> 16) & 255;
+                    int bg = (pixel.color >> 8) & 255;
+                    int bb = pixel.color & 255;
+                    drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, br, bg, bb);
+                }
+            }
+
+            int ticksPerBubbleCycle = (totalBubbles + 1) * bubbleTickRate;
+            int bubbleCyclesCompleted = craftingProgress / ticksPerBubbleCycle;
+            int poolsToRemove = Math.min(bubbleCyclesCompleted, totalPools);
+
+            // Render the visible pools, skipping the first 'poolsToRemove' pools
+            for (int i = poolsToRemove; i < totalPools; i++) {
+                List<Pixel> pool = poolData.get(i);
+                for (Pixel pixel : pool) {
                     drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, r, g, b);
                 }
             }
-        } else {
-            // Not crafting, render bubbles only if blaze powder is added
-            if (isBlazePowderConsumed() && isPowered()) {
-                for (int bubbleIndex = 0; bubbleIndex < bubbleData.size(); bubbleIndex++) {
-                    List<Pixel> bubble = bubbleData.get(bubbleIndex);
 
-                    for (Pixel pixel : bubble) {
-                        int r = (pixel.color >> 16) & 255;
-                        int g = (pixel.color >> 8) & 255;
-                        int b = pixel.color & 255;
+        } else if (this.menu.isPowered() ) {
+
+            for (List<Pixel> bubble : bubbleData) {
+                for (Pixel pixel : bubble) {
+                    int br = (pixel.color >> 16) & 255;
+                    int bg = (pixel.color >> 8) & 255;
+                    int bb = pixel.color & 255;
+                    drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, br, bg, bb);
+                }
+            }
+
+            if (hasStoredPotion) {
+
+                for (List<Pixel> pool : poolData) {
+                    for (Pixel pixel : pool) {
+                        drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, r, g, b);
+                    }
+                }
+            }
+
+        } else {
+
+            if (hasStoredPotion) {
+
+                for (List<Pixel> pool : poolData) {
+                    for (Pixel pixel : pool) {
                         drawPixel(guiGraphics, offsetX + pixel.x, offsetY + pixel.y, r, g, b);
                     }
                 }
             }
         }
     }
+
+
+
+
 
 
 
