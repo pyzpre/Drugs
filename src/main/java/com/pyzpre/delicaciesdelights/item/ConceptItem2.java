@@ -26,7 +26,7 @@ public class ConceptItem2 extends Item {
 
         if (entity instanceof Player player) {
             if (!world.isClientSide) {
-                MobEffectInstance effectInstance = new MobEffectInstance(EffectRegistry.ECHOVEIL.get(), 200);
+                MobEffectInstance effectInstance = new MobEffectInstance(MobEffects.CONFUSION, 200);
                 player.addEffect(effectInstance);
                 OverlayManager.updateOverlayTag(player, "SomeOtherOverlay", true, false);
                 DebuffManager.updateDebuffTag(player, "Schizophrenic", true, false);
